@@ -3201,7 +3201,7 @@
 											"top": 652,
 											"width": 161,
 											"height": 13,
-											"text": "Contacter un conducteur2"
+											"text": "Contacter un conducteur"
 										},
 										{
 											"_type": "LabelView",
@@ -3237,7 +3237,7 @@
 									"parentStyle": true,
 									"left": 1307.5,
 									"top": 645,
-									"width": 171.79541015625,
+									"width": 171,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGUvkXiq/7aukg="
@@ -11495,8 +11495,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": -432,
-											"top": 448,
+											"left": -384,
+											"top": 336,
 											"height": 13
 										},
 										{
@@ -11507,8 +11507,8 @@
 											},
 											"font": "Arial;13;1",
 											"parentStyle": true,
-											"left": 1154.5,
-											"top": 2196,
+											"left": 1178.5,
+											"top": 2140,
 											"width": 246,
 											"height": 13,
 											"text": "Gérer les fonctionnalités et mises à jour"
@@ -11522,8 +11522,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": -432,
-											"top": 448,
+											"left": -384,
+											"top": 336,
 											"width": 80.9072265625,
 											"height": 13,
 											"text": "(from Model1)"
@@ -11537,16 +11537,16 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": -432,
-											"top": 448,
+											"left": -384,
+											"top": 336,
 											"height": 13,
 											"horizontalAlignment": 1
 										}
 									],
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": 1149.5,
-									"top": 2189,
+									"left": 1173.5,
+									"top": 2133,
 									"width": 257.08251953125,
 									"height": 25,
 									"stereotypeLabel": {
@@ -11574,8 +11574,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": -208,
-									"top": 216,
+									"left": -184,
+									"top": 160,
 									"width": 10,
 									"height": 10
 								},
@@ -11591,8 +11591,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": -208,
-									"top": 216,
+									"left": -184,
+									"top": 160,
 									"width": 10,
 									"height": 10
 								},
@@ -11608,8 +11608,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": -208,
-									"top": 216,
+									"left": -184,
+									"top": 160,
 									"width": 10,
 									"height": 10
 								},
@@ -11625,8 +11625,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": -208,
-									"top": 216,
+									"left": -184,
+									"top": 160,
 									"width": 10,
 									"height": 10
 								},
@@ -11642,8 +11642,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": -208,
-									"top": 216,
+									"left": -184,
+									"top": 160,
 									"width": 10,
 									"height": 10
 								}
@@ -11651,8 +11651,8 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 1096,
-							"top": 2184,
+							"left": 1120,
+							"top": 2128,
 							"width": 363,
 							"height": 35,
 							"nameCompartment": {
@@ -13154,6 +13154,20 @@
 							"propertyLabel": {
 								"$ref": "AAAAAAGUvpMPzITq2Qk="
 							}
+						},
+						{
+							"_type": "UMLTextView",
+							"_id": "AAAAAAGU6+NvohrEZwc=",
+							"_parent": {
+								"$ref": "AAAAAAGUvkEAZfmI0hU="
+							},
+							"font": "Helvetica;22;0",
+							"parentStyle": false,
+							"left": 2096,
+							"top": 488,
+							"width": 284,
+							"height": 38,
+							"text": "Plateforme de covoiturage\n\n"
 						}
 					]
 				},
@@ -13989,7 +14003,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGUvkEAZfmHeWM="
 					},
-					"name": "Contacter un conducteur2",
+					"name": "Contacter un conducteur",
 					"ownedElements": [
 						{
 							"_type": "UMLInclude",
