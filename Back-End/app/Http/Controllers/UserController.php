@@ -15,7 +15,6 @@ class UserController extends Controller
     public function updateProfile(Request $request)
     {
         $user = auth()->user();
-
         $validatedData = $request->validate([
             'nom' => 'nullable|string|max:255',
             'prenom' => 'nullable|string|max:255',
@@ -36,12 +35,10 @@ class UserController extends Controller
         $user->update($request->only([
             'nom', 'prenom', 'email', 'telephone', 'password',
         ]));
-
         if ($request->has('photoDeProfil')) {
             $photoPath = $request->file('photoDeProfil')->store('profile_photos', 'public');
             $user->photoDeProfil = $photoPath;
         }
-
         if ($request->has('password')) {
             $user->password = Hash::make($request->password);
         }
