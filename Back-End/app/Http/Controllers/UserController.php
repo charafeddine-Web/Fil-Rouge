@@ -62,7 +62,4 @@ class UserController extends Controller
             'user' => $user
         ], 200);
     }
-
-
-
 }
