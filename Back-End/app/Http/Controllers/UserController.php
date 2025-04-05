@@ -56,9 +56,7 @@ class UserController extends Controller
             }
             $conducteur->save();
         }
-
         $user->save();
-
         return response()->json([
             'message' => 'Profil mis à jour avec succès',
             'user' => $user
