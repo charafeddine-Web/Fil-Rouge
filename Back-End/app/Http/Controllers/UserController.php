@@ -42,22 +42,18 @@ class UserController extends Controller
         if ($request->has('password')) {
             $user->password = Hash::make($request->password);
         }
-
         if ($user->role == 'conducteur') {
             $conducteur = Conducteur::firstOrCreate(['user_id' => $user->id]);
 
             $conducteur->update($request->only([
                 'num_permis', 'adresse', 'ville', 'date_naissance', 'sexe',
             ]));
-
             if ($request->hasFile('photo_permis')) {
                 $conducteur->photo_permis = $request->file('photo_permis')->store('permis', 'public');
             }
-
             if ($request->hasFile('photo_identite')) {
                 $conducteur->photo_identite = $request->file('photo_identite')->store('identites', 'public');
             }
-
             $conducteur->save();
         }
 
