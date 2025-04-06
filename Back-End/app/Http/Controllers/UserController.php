@@ -4,11 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Conducteur;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    protected  $AuthService;
+    public function __construct( AuthService $AuthService)
+    {
+        $this->AuthService=$AuthService;
+    }
     /**
      * Update user profile based on their role.
      */
@@ -32,34 +38,11 @@ class UserController extends Controller
             'photo_identite' => 'nullable|required_if:role,conducteur|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $user->update($request->only([
-            'nom', 'prenom', 'email', 'telephone', 'password',
-        ]));
-        if ($request->has('photoDeProfil')) {
-            $photoPath = $request->file('photoDeProfil')->store('profile_photos', 'public');
-            $user->photoDeProfil = $photoPath;
-        }
-        if ($request->has('password')) {
-            $user->password = Hash::make($request->password);
-        }
-        if ($user->role == 'conducteur') {
-            $conducteur = Conducteur::firstOrCreate(['user_id' => $user->id]);
+        $updatedUser = $this->AuthService->updateProfile($user, $request);
 
-            $conducteur->update($request->only([
-                'num_permis', 'adresse', 'ville', 'date_naissance', 'sexe',
-            ]));
-            if ($request->hasFile('photo_permis')) {
-                $conducteur->photo_permis = $request->file('photo_permis')->store('permis', 'public');
-            }
-            if ($request->hasFile('photo_identite')) {
-                $conducteur->photo_identite = $request->file('photo_identite')->store('identites', 'public');
-            }
-            $conducteur->save();
-        }
-        $user->save();
         return response()->json([
             'message' => 'Profil mis à jour avec succès',
-            'user' => $user
-        ], 200);
+            'user' => $updatedUser,
+        ]);
     }
 }
