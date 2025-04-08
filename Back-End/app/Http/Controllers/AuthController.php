@@ -66,6 +66,19 @@ class AuthController extends Controller
             'token' => $result['token']
         ]);
     }
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|numeric',
+        ]);
+        $user = auth()->user();
+        $verified = $this->AuthService->verifyEmail($user->id, $request->code);
+        if (!$verified) {
+            return response()->json(['message' => 'Code invalide'], 400);
+        }
+        return response()->json(['message' => 'Email vérifié avec succès']);
+    }
+
 
     public function logout(Request $request)
     {

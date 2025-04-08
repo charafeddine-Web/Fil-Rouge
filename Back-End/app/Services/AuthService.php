@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Mail\VerificationCodeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use App\Interfaces\UserRepositoryInterface;
@@ -66,7 +68,16 @@ class AuthService
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $verificationCode = rand(100000, 999999);
+        $this->userRepo->updateVerificationCode($user->id, $verificationCode);
+
+        Mail::to($user->email)->send(new VerificationCodeMail($verificationCode));
+
         return ['user' => $user, 'token' => $token];
+    }
+    public function verifyEmail($userId, $code)
+    {
+        return $this->userRepo->verifyEmail($userId, $code);
     }
 
     public function login($data)
@@ -78,6 +89,12 @@ class AuthService
                 'email' => ['Invalid credentials.']
             ]);
         }
+        if (!$user->email_verified) {
+            throw ValidationException::withMessages([
+                'email' => ['message'=>'Veuillez vérifier votre adresse e-mail.']
+            ]);
+        }
+
 
         if ($user->role === 'conducteur' && $user->status !== 'active') {
             throw ValidationException::withMessages([

@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Hash;
 
 class UserRepository implements UserRepositoryInterface
 {
+    protected $model;
+
+    public function __construct(User $user)
+    {
+        $this->model = $user;
+    }
     public function create(array $data)
     {
         return User::create($data);
@@ -48,6 +54,26 @@ class UserRepository implements UserRepositoryInterface
         }
 
         return $user->fresh();
+    }
+    public function updateVerificationCode($userId, $code)
+    {
+        return $this->model->where('id', $userId)->update([
+            'verification_code' => $code,
+            'email_verified' => false,
+        ]);
+    }
+    public function verifyEmail($userId, $code)
+    {
+        $user = $this->model->find($userId);
+
+        if ($user && $user->verification_code == $code) {
+            $user->email_verified = true;
+            $user->verification_code = null;
+            $user->save();
+            return true;
+        }
+
+        return false;
     }
 
 }
