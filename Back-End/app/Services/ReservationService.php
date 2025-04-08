@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Repositories\Interfaces\ReservationInterface;
+use App\Interfaces\ReservationInterface;
 use App\Models\Reservation;
 use Illuminate\Database\Eloquent\Collection;
 

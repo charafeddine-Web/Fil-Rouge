@@ -35,11 +35,14 @@ class ReservationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'statut' => 'required|string',
+            'status' => 'required|in:en_attente,confirmee,annulee',
             'date_reservation' => 'required|date',
-            'user_id' => 'required|exists:users,id',
+            'passager_id' => 'required|exists:users,id',
             'trajet_id' => 'required|exists:trajets,id',
+            'places_reservees' => 'required|integer|min:1',
+            'prix_total' => 'nullable|numeric|min:0'
         ]);
+
 
         $reservation = $this->reservationService->createReservation($validated);
 
@@ -49,11 +52,14 @@ class ReservationController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
-            'statut' => 'sometimes|string',
+            'status' => 'sometimes|in:en_attente,confirmee,annulee',
             'date_reservation' => 'sometimes|date',
-            'user_id' => 'sometimes|exists:users,id',
+            'passager_id' => 'sometimes|exists:users,id',
             'trajet_id' => 'sometimes|exists:trajets,id',
+            'places_reservees' => 'sometimes|integer|min:1',
+            'prix_total' => 'sometimes|numeric|min:0'
         ]);
+
 
         $updated = $this->reservationService->updateReservation($id, $validated);
 

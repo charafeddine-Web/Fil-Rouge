@@ -14,7 +14,7 @@ class Trajet extends Model
         'lieu_depart',
         'lieu_arrivee',
         'date_depart',
-        'places_disponibles'
+        'nombre_places'
     ];
 
     public function conducteur()

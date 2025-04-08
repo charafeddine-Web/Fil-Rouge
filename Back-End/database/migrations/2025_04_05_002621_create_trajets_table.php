@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('lieu_depart');
             $table->string('lieu_arrivee');
             $table->dateTime('date_depart');
-            $table->integer('places_disponibles');
+            $table->integer('nombre_places');
 
             $table->timestamps();
         });
