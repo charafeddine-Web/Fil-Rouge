@@ -65,7 +65,11 @@ class UserRepository implements UserRepositoryInterface
     public function verifyEmail($userId, $code)
     {
         $user = $this->model->find($userId);
-
+        if (!$user) {
+            return response()->json([
+                'message' => 'Utilisateur non trouvé.'
+            ], 404);
+        }
         if ($user && $user->verification_code == $code) {
             $user->email_verified = true;
             $user->verification_code = null;
