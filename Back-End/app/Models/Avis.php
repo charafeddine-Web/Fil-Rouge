@@ -10,10 +10,10 @@ class Avis extends Model
     use HasFactory;
 
     protected $fillable = [
-        'contenu',
+        'commentaire',
         'note',
-        'user_id',
-        'reservation_id',
+        'passager_id',
+        'conducteur_id',
     ];
 
     public function passager()
@@ -27,8 +27,5 @@ class Avis extends Model
     }
 
 
-    public function reservation()
-    {
-        return $this->belongsTo(Reservation::class);
-    }
+
 }

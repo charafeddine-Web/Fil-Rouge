@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('avis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('passager_id')->constrained()->onDelete('cascade');
-            $table->foreignId('conducteur_id')->constrained()->onDelete('cascade');
+            $table->foreignId('passager_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('conducteur_id')->constrained('conducteurs')->onDelete('cascade');
             $table->tinyInteger('note');
             $table->text('commentaire')->nullable();
             $table->timestamps();

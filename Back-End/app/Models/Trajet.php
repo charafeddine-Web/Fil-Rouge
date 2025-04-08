@@ -14,13 +14,29 @@ class Trajet extends Model
         'lieu_depart',
         'lieu_arrivee',
         'date_depart',
-        'nombre_places',
-        'prix',
+        'places_disponibles'
     ];
 
     public function conducteur()
     {
         return $this->belongsTo(Conducteur::class);
     }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * relation avec passager avec table pivot reservations
+     */
+    public function passagers()
+    {
+        return $this->belongsToMany(User::class, 'reservations', 'trajet_id', 'passager_id')
+            ->withPivot('status', 'places_reservees', 'created_at')
+            ->withTimestamps();
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
 }
 

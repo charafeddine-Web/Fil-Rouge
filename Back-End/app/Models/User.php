@@ -71,8 +71,19 @@ class User extends Authenticatable
         return $this->hasMany(Message::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * relation avec trajet avec table pivot reservations
+     */
+    public function trajets()
+    {
+        return $this->belongsToMany(Trajet::class, 'reservations', 'passager_id', 'trajet_id')
+            ->withPivot('status', 'places_reservees', 'created_at')
+            ->withTimestamps();
+    }
 
-    public function reservation(){
+    public function reservations()
+    {
         return $this->hasMany(Reservation::class);
     }
 

@@ -11,11 +11,13 @@ class Reservation extends Model
     protected $fillable = [
         'statut',
         'date_reservation',
-        'user_id',
+        'passager_id',
         'trajet_id',
+        'places_reservees',
+        'prix_total',
     ];
 
-    public function user()
+    public function passager()
     {
         return $this->belongsTo(User::class);
     }
@@ -24,6 +26,7 @@ class Reservation extends Model
     {
         return $this->belongsTo(Trajet::class);
     }
+
 
     public function paiement()
     {

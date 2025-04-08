@@ -14,17 +14,16 @@ return new class extends Migration
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
             $table->dateTime('date_reservation');
-            $table->string('statut')->default('en_attente');
-            $table->unsignedBigInteger('user_id');
+            $table->enum('status', ['en_attente', 'confirmee', 'annulee'])->default('en_attente');
+            $table->unsignedBigInteger('passager_id');
             $table->unsignedBigInteger('trajet_id');
-            $table->integer('nombre_places')->default(1);
+            $table->integer('places_reservees')->default(1);
             $table->float('prix_total')->nullable();
-            $table->string('moyen_paiement')->nullable();
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('passager_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('trajet_id')->references('id')->on('trajets')->onDelete('cascade');
         });
+
     }
 
     /**
