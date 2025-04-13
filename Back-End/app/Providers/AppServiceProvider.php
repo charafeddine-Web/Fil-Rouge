@@ -7,7 +7,9 @@ use App\Interfaces\ReservationInterface;
 use App\Interfaces\TrajetRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\VehiculeRepositoryInterface;
+use App\Repositories\AvisRepository;
 use App\Repositories\ConducteurRepository;
+use App\Interfaces\AvisRepositoryInterface;
 use App\Repositories\ReservationRepository;
 use App\Repositories\TrajetRepository;
 use App\Repositories\UserRepository;
@@ -26,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(VehiculeRepositoryInterface::class, VehiculeRepository::class);
         $this->app->bind(ReservationInterface::class, ReservationRepository::class);
         $this->app->bind(TrajetRepositoryInterface::class, TrajetRepository::class);
+        $this->app->bind(AvisRepositoryInterface::class, AvisRepository::class);
+
     }
     /**
      * Bootstrap any app&lication services.
