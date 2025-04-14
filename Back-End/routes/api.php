@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\AvisController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\MessageController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -19,5 +21,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('reservations', ReservationController::class);
     Route::apiResource('trajets', TrajetController::class);
+    Route::apiResource('avis', AvisController::class);
+
+    Route::post('/messages', [MessageController::class, 'send']);
+
 
 });
