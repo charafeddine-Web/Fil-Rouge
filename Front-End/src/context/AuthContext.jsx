@@ -3,7 +3,7 @@ import { getCurrentUser } from '../services/auth'; // fonction API pour récupé
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
 
@@ -34,3 +34,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+export default AuthProvider;
