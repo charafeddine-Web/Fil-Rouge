@@ -54,7 +54,7 @@ const Header = () => {
               <circle cx="8.5" cy="17" r="1.5" fill="currentColor" />
             </svg>
           </div>
-          <span className="text-2xl font-bold text-gray-800">EcoDrive</span>
+          <span className="text-2xl font-bold text-gray-800">SwiftCar</span>
         </Link>
 
         {/* Desktop Navigation */}

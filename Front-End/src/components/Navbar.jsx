@@ -8,7 +8,7 @@ const Navbar = ({ mobile = false }) => {
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Search Rides", path: "/search-rides" },
+    { name: "Search Rides", path: "/search" },
     { name: "How it Works", path: "/how-it-works" },
     { name: "About Us", path: "/about" },
     { name: "Contact", path: "/contact" },

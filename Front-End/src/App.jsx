@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import SearchRides from './pages/SearchRides';
 import RideDetails from './pages/RideDetails';
+import HowItWorks from './pages/HowItWorks'
 import NotFound from './pages/NotFound';
 
 // Pages utilisateur
@@ -46,9 +47,9 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
         <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
-         
+          <Route path="/" element={< Home />} />
           <Route path="/search" element={<SearchRides />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/ride/:id" element={<RideDetails />} />
         </Route>
 

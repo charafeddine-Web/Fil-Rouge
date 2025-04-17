@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import { getCurrentUser } from '../services/auth'; // fonction API pour récupérer l'utilisateur connecté
+import { getCurrentUser } from '../services/auth'; 
 
 export const AuthContext = createContext();
 

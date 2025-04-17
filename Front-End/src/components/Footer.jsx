@@ -58,7 +58,7 @@ const Footer = () => {
                   <circle cx="8.5" cy="17" r="1.5" fill="currentColor" />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-gray-800">EcoDrive</span>
+              <span className="text-2xl font-bold text-gray-800">SwiftCar</span>
             </Link>
             <p className="text-gray-600 mb-6 max-w-md">
               Join our carpooling community and help reduce carbon emissions
