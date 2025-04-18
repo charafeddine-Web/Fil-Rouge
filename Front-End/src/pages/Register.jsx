@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { motion } from "framer-motion";
+import VehicleInfoForm from "../components/Form/VehicleInfoForm";
+import AccountInfoForm from "../components/Form/AccountInfoForm";
+import PersonalInfoForm from "../components/Form/PersonalInfoForm";
+import StepperIndicator from "../components/StepperIndicator";
 
 const Register = () => {
   const [formStep, setFormStep] = useState(0);
@@ -13,8 +17,8 @@ const Register = () => {
     password: "",
     confirmPassword: "",
     telephone: "",
-    role: "passager",
-    // Vehicle information for driver
+    role: "passenger",
+    // info Vehicle  
     marque: "",
     modele: "",
     immatriculation: "",
@@ -24,11 +28,12 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const updateFormData = (field, value) => {
-    
-    setFormData((prevState) => ({
-      ...prevState,
-      [field]: value
-    }));
+    setFormData((prevState) => {
+      return {
+        ...prevState,
+        [field]: value
+      }
+    });
   };
 
   const nextStep = (e) => {
@@ -42,271 +47,16 @@ const Register = () => {
   };
 
   const handleSubmit = async (e) => {
-   
     e.preventDefault();
     setLoading(true);
     
     // Simulate API call
-    // setTimeout(() => {
-    //   setLoading(false);
-    //   console.log("Form submitted:", formData);
-    // }, 1500);
+    setTimeout(() => {
+      setLoading(false);
+      console.log("Form submitted:", formData);
+      // Here you would typically redirect the user or show a success message
+    }, 1500);
   };
-
-  const renderStepIndicator = () => {
-    return (
-      <div className="flex items-center justify-center space-x-4 mb-8">
-        <div className="flex flex-col items-center">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === 0 ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>
-            1
-          </div>
-          <span className="text-xs mt-1 font-urbanist">Personal</span>
-        </div>
-        <div className={`flex-1 h-1 ${formStep >= 1 ? 'bg-green-300' : 'bg-gray-200'}`}></div>
-        <div className="flex flex-col items-center">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === 1 ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>
-            2
-          </div>
-          <span className="text-xs mt-1 font-urbanist">Account</span>
-        </div>
-        {formData.role === "conducteur" && (
-          <>
-            <div className={`flex-1 h-1 ${formStep >= 2 ? 'bg-green-300' : 'bg-gray-200'}`}></div>
-            <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === 2 ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>
-                3
-              </div>
-              <span className="text-xs mt-1 font-urbanist">Vehicle</span>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  const PersonalInfoForm = () => (
-    <motion.form 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      onSubmit={nextStep} 
-      className="space-y-4"
-    >
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Input 
-            label="Nom" 
-            value={formData.nom}
-            onChange={(e) =>  updateFormData('nom', e.target.value)}
-            placeholder="Dupont"
-            required
-          />
-        </div>
-        <div>
-          <Input 
-            label="Prénom" 
-            value={formData.prenom}
-            onChange={(e) => updateFormData('prenom', e.target.value)}
-            placeholder="Jean"
-            required
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Input 
-          label="Téléphone"
-          value={formData.telephone}
-          onChange={(e) => updateFormData('telephone', e.target.value)}
-          placeholder="+33612345678"
-        />
-      </div>
-
-      <div className="mt-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Je m'inscris en tant que</label>
-        <div className="grid grid-cols-2 gap-4">
-          <div 
-            className={`border rounded-lg p-4 cursor-pointer transition-colors ${formData.role === 'passager' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}`}
-            onClick={() => updateFormData('role', 'passager')}
-          >
-            <div className="flex items-center">
-              <div className={`w-5 h-5 rounded-full border-2 mr-2 flex items-center justify-center ${formData.role === 'passager' ? 'border-green-500' : 'border-gray-300'}`}>
-                {formData.role === 'passager' && <div className="w-3 h-3 rounded-full bg-green-500"></div>}
-              </div>
-              <span className="font-medium">Passager</span>
-            </div>
-          </div>
-          
-          <div 
-            className={`border rounded-lg p-4 cursor-pointer transition-colors ${formData.role === 'conducteur' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}`}
-            onClick={() => updateFormData('role', 'conducteur')}
-          >
-            <div className="flex items-center">
-              <div className={`w-5 h-5 rounded-full border-2 mr-2 flex items-center justify-center ${formData.role === 'conducteur' ? 'border-green-500' : 'border-gray-300'}`}>
-                {formData.role === 'conducteur' && <div className="w-3 h-3 rounded-full bg-green-500"></div>}
-              </div>
-              <span className="font-medium">Conducteur</span>
-            </div>
-          </div>
-        </div>
-      </div>
-        
-      <div>
-        <Button 
-          type="submit" 
-          fullWidth
-        >
-          Continue
-        </Button>
-      </div>
-    </motion.form>
-  );
-
-  const AccountInfoForm = () => (
-    <motion.form 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      onSubmit={formData.role === "conducteur" ? nextStep : handleSubmit} 
-      className="space-y-4"
-    >
-      <div>
-        <Input 
-          label="Email" 
-          type="email" 
-          value={formData.email}
-          onChange={(e) => updateFormData('email', e.target.value)}
-          placeholder="votre@email.com"
-          required
-        />
-      </div>
-      
-      <div>
-        <Input 
-          label="Mot de passe" 
-          type="password" 
-          value={formData.password}
-          onChange={(e) => updateFormData('password', e.target.value)}
-          placeholder="••••••••"
-          required
-        />
-      </div>
-      
-      <div>
-        <Input 
-          label="Confirmer le mot de passe" 
-          type="password" 
-          value={formData.confirmPassword}
-          onChange={(e) => updateFormData('confirmPassword', e.target.value)}
-          placeholder="••••••••"
-          required
-        />
-      </div>
-      
-      <div className="flex space-x-4">
-        <Button 
-          type="button" 
-          onClick={prevStep}
-          variant="outline"
-          className="flex-1"
-        >
-          Retour
-        </Button>
-        <Button 
-          type="submit" 
-          className="flex-1"
-          loading={formData.role === "passager" ? loading : false}
-        >
-          {formData.role === "conducteur" ? "Continuer" : "Créer un compte"}
-        </Button>
-      </div>
-    </motion.form>
-  );
-
-  const VehicleInfoForm = () => (
-    <motion.form 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      onSubmit={handleSubmit} 
-      className="space-y-4"
-    >
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Input 
-            label="Marque" 
-            value={formData.marque}
-            onChange={(e) => updateFormData('marque', e.target.value)}
-            placeholder="Renault"
-            required
-          />
-        </div>
-        <div>
-          <Input 
-            label="Modèle" 
-            value={formData.modele}
-            onChange={(e) => updateFormData('modele', e.target.value)}
-            placeholder="Clio"
-            required
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Input 
-          label="Immatriculation" 
-          value={formData.immatriculation}
-          onChange={(e) => updateFormData('immatriculation', e.target.value)}
-          placeholder="AB-123-CD"
-          required
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Input 
-            label="Couleur" 
-            value={formData.couleur}
-            onChange={(e) => updateFormData('couleur', e.target.value)}
-            placeholder="Bleu"
-            required
-          />
-        </div>
-        <div>
-          <Input 
-            label="Nombre de places" 
-            type="number" 
-            min="1"
-            max="9"
-            value={formData.nombre_places}
-            onChange={(e) => updateFormData('nombre_places', parseInt(e.target.value) || 1)}
-            required
-          />
-        </div>
-      </div>
-      
-      <div className="flex space-x-4">
-        <Button 
-          type="button" 
-          onClick={prevStep}
-          variant="outline"
-          className="flex-1"
-        >
-          Retour
-        </Button>
-        <Button 
-          type="submit" 
-          className="flex-1"
-          loading={loading}
-        >
-          Créer un compte
-        </Button>
-      </div>
-    </motion.form>
-  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-gray-100 px-4">
@@ -357,22 +107,55 @@ const Register = () => {
         <div className="h-2 bg-gradient-to-r from-green-400 via-green-500 to-green-400"></div>
         <div className="px-8 pt-8 pb-8">
           <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 font-urbanist">Créer un compte</h2>
+            <h2 className="text-3xl font-bold text-gray-800 font-urbanist">Create an Account</h2>
             <p className="text-gray-500 mt-2 font-urbanist">
-              Rejoignez notre communauté de covoiturage
-              {formData.role === "conducteur" ? " en tant que conducteur" : " en tant que passager"}
+              Join our carpooling community
+              {formData.role === "driver" ? " as a driver" : " as a passenger"}
             </p>
           </div>
           
-          {renderStepIndicator()}
+          <StepperIndicator formStep={formStep} role={formData.role} />
           
-          {formStep === 0 && <PersonalInfoForm />}
-          {formStep === 1 && <AccountInfoForm />}
-          {formStep === 2 && formData.role === "conducteur" && <VehicleInfoForm />}
+          {formStep === 0 && 
+            <PersonalInfoForm 
+              nom={formData.nom} 
+              prenom={formData.prenom} 
+              telephone={formData.telephone} 
+              role={formData.role}
+              nextStep={nextStep} 
+              updateFormData={updateFormData}
+            />
+          }
+
+          {formStep === 1 && 
+            <AccountInfoForm 
+              role={formData.role} 
+              email={formData.email} 
+              password={formData.password} 
+              confirmPassword={formData.confirmPassword}
+              prevStep={prevStep}
+              nextStep={nextStep}
+              updateFormData={updateFormData}
+              handleSubmit={handleSubmit}
+            />
+          }
+          
+          {formStep === 2 && formData.role === "conducteur" && 
+            <VehicleInfoForm 
+              marque={formData.marque}
+              modele={formData.modele}
+              immatriculation={formData.immatriculation}
+              couleur={formData.couleur}
+              nombre_places={formData.nombre_places}
+              updateFormData={updateFormData}
+              prevStep={prevStep}
+              handleSubmit={handleSubmit}
+            />
+          }
           
           <div className="relative flex items-center mt-8">
             <div className="flex-grow border-t border-gray-200"></div>
-            <span className="flex-shrink mx-4 text-gray-400 font-urbanist">ou inscrivez-vous avec</span>
+            <span className="flex-shrink mx-4 text-gray-400 font-urbanist">or sign up with</span>
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
           
@@ -404,12 +187,12 @@ const Register = () => {
           </div>
           
           <p className="mt-8 text-center text-sm text-gray-500 font-urbanist">
-            Vous avez déjà un compte?{" "}
+            Already have an account?{" "}
             <Link 
               to="/login" 
               className="font-semibold text-green-500 hover:text-green-600"
             >
-              Connectez-vous
+              Log in
             </Link>
           </p>
         </div>
