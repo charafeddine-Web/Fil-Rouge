@@ -3,21 +3,53 @@ import { Link } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { motion } from "framer-motion";
+import { login } from "../services/auth";
+import { toast } from 'react-toastify'; 
+import { useNavigate } from 'react-router-dom'; 
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simuler un appel API
-    setTimeout(() => {
+
+    const data = { 
+      email,
+      password,
+    };
+
+    try {
+      const response = await login(data); 
+      toast.success("Login réussie !");
+      setTimeout(() => navigate('/offer-ride'), 1500);
+    } catch (error) {
+      if (error.response?.data?.errors) {
+        console.log(error.response.data.errors); 
+
+        Object.values(error.response.data.errors).flat().forEach((msg) => {
+          toast.error(msg);
+        });
+      } else {
+        toast.error("Une erreur s’est produite.");
+      }
+    } finally {
       setLoading(false);
-      // Redirection ou gestion de connexion à implémenter
-    }, 1500);
+    }
   };
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   try{}
+
+  //   setTimeout(() => {
+  //     setLoading(false);
+  //     // Redirection ou gestion de connexion à implémenter
+  //   }, 1500);
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-gray-100 px-4">

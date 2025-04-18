@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Input from "../Input";
 import Button from "../Button";
 
-const AccountInfoForm = ({ role, email, password, confirmPassword, prevStep, nextStep, updateFormData, handleSubmit }) => {
+const AccountInfoForm = ({ role, email, password, password_confirmation, prevStep, nextStep, updateFormData, handleSubmit }) => {
   const [loading, setLoading] = useState(false);
   
   return (
@@ -48,8 +48,8 @@ const AccountInfoForm = ({ role, email, password, confirmPassword, prevStep, nex
         <Input 
           label="Confirm Password" 
           type="password" 
-          value={confirmPassword}
-          onChange={(e) => updateFormData('confirmPassword', e.target.value)}
+          value={password_confirmation}
+          onChange={(e) => updateFormData('password_confirmation', e.target.value)}
           placeholder="••••••••"
           required
         />
