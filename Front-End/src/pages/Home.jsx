@@ -427,7 +427,7 @@ const Home = () => {
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Link to="/register">
-              <Button className="bg-white text-green-600 hover:bg-gray-100">
+              <Button className=" text-black hover:bg-gray-100">
                 Sign Up Now
               </Button>
             </Link>

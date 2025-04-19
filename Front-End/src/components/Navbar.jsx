@@ -10,8 +10,8 @@ const Navbar = ({ mobile = false }) => {
     { name: "Home", path: "/" },
     { name: "Search Rides", path: "/search" },
     { name: "How it Works", path: "/how-it-works" },
-    { name: "About Us", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    // { name: "About Us", path: "/about" },
+    // { name: "Contact", path: "/contact" },
   ];
 
   const isActive = (path) => {

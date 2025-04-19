@@ -14,6 +14,7 @@ import UserLayout from './layouts/UserLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import SearchRides from './pages/SearchRides';
 import RideDetails from './pages/RideDetails';
 import HowItWorks from './pages/HowItWorks'
@@ -51,6 +52,7 @@ function App() {
         <Route element={<PublicLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/" element={< Home />} />
           <Route path="/search" element={<SearchRides />} />
           <Route path="/how-it-works" element={<HowItWorks />} />

@@ -7,11 +7,11 @@ import VehicleInfoForm from "../components/Form/VehicleInfoForm";
 import AccountInfoForm from "../components/Form/AccountInfoForm";
 import PersonalInfoForm from "../components/Form/PersonalInfoForm";
 import StepperIndicator from "../components/StepperIndicator";
-import { register } from "../services/auth"; // Ensure the path is correct
+import { register } from "../services/auth"; 
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ConducteurInfoForm from "../components/Form/ConducteurInfoForm"; // Import the ConducteurInfoForm
+import ConducteurInfoForm from "../components/Form/ConducteurInfoForm";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -87,8 +87,9 @@ const Register = () => {
 
     try {
       const response = await register(dataToSend);
-      toast.success("Registration successful !");
-      setTimeout(() => navigate('/login'), 1500);
+      toast.success("Registration successful! Please check your email for a verification code.");
+
+      setTimeout(() =>  navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`), 1500);
     } catch (error) {
       if (error.response?.data?.errors) {
         Object.values(error.response.data.errors).flat().forEach((msg) => {
@@ -240,15 +241,14 @@ const Register = () => {
 )}
 
           
-          <div className="relative flex items-center mt-8">
+          {/* <div className="relative flex items-center mt-8">
             <div className="flex-grow border-t border-gray-200"></div>
             <span className="flex-shrink mx-4 text-gray-400 font-urbanist">or sign up with</span>
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
           
           <div className="grid grid-cols-3 gap-3 mt-6">
-            {/* Social media buttons */}
-          </div>
+          </div> */}
           
           <p className="mt-8 text-center text-sm text-gray-500 font-urbanist">
             Already have an account?{" "}
