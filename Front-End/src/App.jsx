@@ -53,6 +53,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        
           <Route path="/" element={< Home />} />
           <Route path="/search" element={<SearchRides />} />
           <Route path="/how-it-works" element={<HowItWorks />} />

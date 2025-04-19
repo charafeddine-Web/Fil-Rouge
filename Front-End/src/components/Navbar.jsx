@@ -4,7 +4,7 @@ import {AuthContext} from "../context/AuthContext";
 
 const Navbar = ({ mobile = false }) => {
   const location = useLocation();
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const { isAuthenticated, logout,user } = useContext(AuthContext);
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -80,8 +80,9 @@ const Navbar = ({ mobile = false }) => {
                 }`}
               >
                 <span className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-medium mr-2">
-                  JD
+                       {user?.name?.split(" ").map(n => n[0]).join("").toUpperCase() || "U"}
                 </span>
+
                 {mobile && <span>Profile</span>}
               </Link>
 

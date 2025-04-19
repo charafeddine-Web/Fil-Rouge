@@ -27,9 +27,16 @@ export const AuthContext = createContext();
       localStorage.removeItem('token');
     }
   };
+  const isAuthenticated = !!user;
 
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+  };
+  
   return (
-    <AuthContext.Provider value={{ token, setToken: handleSetToken, user, setUser }}>
+    <AuthContext.Provider value={{ token, setToken: handleSetToken, user, setUser,isAuthenticated, logout}}>
       {children}
     </AuthContext.Provider>
   );

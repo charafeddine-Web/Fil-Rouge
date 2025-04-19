@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
@@ -6,13 +6,15 @@ import { motion } from "framer-motion";
 import { login } from "../services/auth";
 import { toast } from 'react-toastify'; 
 import { useNavigate } from 'react-router-dom'; 
+import { AuthContext } from "../context/AuthContext";
+import { getCurrentUser } from "../services/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); 
-
+  const { setToken, setUser } = useContext(AuthContext);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -23,9 +25,14 @@ const Login = () => {
     };
 
     try {
-      const response = await login(data); 
+      const response = await login(data);
+      localStorage.setItem('token', response.data.token); 
+      const token = response.data.token;
+      setToken(token);
       toast.success("Login réussie !");
-      setTimeout(() => navigate('/offer-ride'), 1500);
+      const userResponse = await getCurrentUser();
+      setUser(userResponse.data);
+      setTimeout(() => navigate('/offer-ride'), 0);
     } catch (error) {
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors; 

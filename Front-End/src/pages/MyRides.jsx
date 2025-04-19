@@ -2,7 +2,7 @@
 const EditProfile = ()=>{
 
     return (
-        <h1>EditProfile</h1>
+        <h1>Myride</h1>
     );
 };
 

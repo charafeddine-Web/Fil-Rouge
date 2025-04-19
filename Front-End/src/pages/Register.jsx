@@ -89,7 +89,7 @@ const Register = () => {
       const response = await register(dataToSend);
       toast.success("Registration successful! Please check your email for a verification code.");
 
-      setTimeout(() =>  navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`), 1500);
+      setTimeout(() =>  navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`), 500);
     } catch (error) {
       if (error.response?.data?.errors) {
         Object.values(error.response.data.errors).flat().forEach((msg) => {
