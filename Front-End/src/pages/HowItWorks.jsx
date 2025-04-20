@@ -391,7 +391,7 @@ const HowItWorks = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl font-bold mb-6">Ready to Get Started with CarShare?</h2>
+            <h2 className="text-3xl font-bold mb-6">Ready to Get Started with SwiftCar ?</h2>
             <p className="text-xl max-w-2xl mx-auto mb-8">
               Join our community of drivers and passengers today and experience a better way to travel.
             </p>

@@ -22,16 +22,19 @@ import NotFound from './pages/NotFound';
 
 // Pages utilisateur
 import OfferRide from './pages/OfferRide';
-import MyRides from './pages/MyRides';
-import Reservations from './pages/Reservations';
+import MyRides from './pages/conductuer/MyRides';
+import Reservations from './pages/conductuer/Reservations';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
+import My_Reservations from './pages/passager/My_Reservations';
+import Messaging from  "./pages/Messaging";
+import DriverDashboard from './pages/conductuer/DriverDashboard';
 
 // Pages admin
-import Dashboard from './admin/Dashboard';
-import UsersList from './admin/UsersList';
-import RidesList from './admin/RidesList';
-import Reports from './admin/Reports';
+import Dashboard from './pages/admin/Dashboard';
+import UsersList from './pages/admin/UsersList';
+import RidesList from './pages/admin/RidesList';
+import Reports from './pages/admin/Reports';
 // import Settings from './admin/Settings';
 
 function App() {
@@ -64,6 +67,9 @@ function App() {
           <Route path="/offer-ride" element={<SearchRides />} /> 
           <Route path="/my-rides" element={<MyRides />} />
           <Route path="/reservations" element={<Reservations />} />
+          <Route path="/Messaging" element={<Messaging />} />
+          <Route path="/dashboard" element={<DriverDashboard />} />
+          <Route path="/Myreservations" element={<My_Reservations />} />
           <Route path="/profile" element={<Profile />} />
            <Route path="/edit-profile" element={<EditProfile />} />
         </Route>

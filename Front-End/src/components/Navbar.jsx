@@ -23,15 +23,15 @@ const Navbar = ({ mobile = false }) => {
     { name: "Home", path: "/" },
     { name: "Search Rides", path: "/offer-ride" },
     { name: "How it Works", path: "/how-it-works" },
-    { name: "About Us", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    // { name: "About Us", path: "/about" },
+    // { name: "Contact", path: "/contact" },
   ];
 
   // Links for passengers
   const passengerLinks = [
     { name: "Home", path: "/" },
     { name: "Search Rides", path: "/offer-ride" },
-    { name: "My Reservations", path: "/my-reservations" },
+    { name: "My Reservations", path: "/Myreservations" },
     { name: "Messaging", path: "/messaging" },
   ];
 
@@ -60,6 +60,7 @@ const Navbar = ({ mobile = false }) => {
   const navLinks = getNavLinks();
 
   return (
+
     <nav className={`font-urbanist ${mobile ? "" : "flex items-center"}`}>
       {/* Navigation Links */}
       <div className={mobile ? "space-y-1" : "flex items-center"}>

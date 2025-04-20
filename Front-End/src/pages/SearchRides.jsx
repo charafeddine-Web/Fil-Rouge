@@ -267,62 +267,103 @@ const SearchRides = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      
-      <div className="bg-green-50 py-6">
+    <div className="min-h-screen flex flex-col bg-gray-50 pt-8">
+      {/* Modern Hero Search Section */}
+      <div className="bg-green-50 py-8 shadow-md">
         <div className="container mx-auto px-4">
-          <form onSubmit={handleSearch} className="bg-white p-6 rounded-lg shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label htmlFor="departure" className="block text-gray-700 mb-1">From</label>
-                <input
-                  type="text"
-                  id="departure"
-                  value={departure}
-                  onChange={(e) => setDeparture(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter departure city"
-                  required
-                />
+          <form onSubmit={handleSearch} className="bg-white p-6 rounded-xl shadow-lg max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="relative">
+                <label htmlFor="departure" className="block text-sm font-medium text-gray-700 mb-2">From</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    id="departure"
+                    value={departure}
+                    onChange={(e) => setDeparture(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    placeholder="Enter departure city"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor="destination" className="block text-gray-700 mb-1">To</label>
-                <input
-                  type="text"
-                  id="destination"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter destination city"
-                  required
-                />
+              
+              <div className="relative">
+                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">To</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    id="destination"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    placeholder="Enter destination city"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor="date" className="block text-gray-700 mb-1">When</label>
-                <input
-                  type="date"
-                  id="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
+              
+              <div className="relative">
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">When</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="date"
+                    id="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor="passengers" className="block text-gray-700 mb-1">Passengers</label>
+              
+              <div className="relative">
+                <label htmlFor="passengers" className="block text-sm font-medium text-gray-700 mb-2">Passengers</label>
                 <div className="flex">
-                  <select
-                    id="passengers"
-                    value={passengers}
-                    onChange={(e) => setPassengers(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((num) => (
-                      <option key={num} value={num}>{num}</option>
-                    ))}
-                  </select>
-                  <Button type="submit" className="rounded-l-none">
-                    Search
+                  <div className="relative flex-grow">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </span>
+                    <select
+                      id="passengers"
+                      value={passengers}
+                      onChange={(e) => setPassengers(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all appearance-none"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
+                        <option key={num} value={num}>{num}</option>
+                      ))}
+                    </select>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </div>
+                  <Button type="submit" className="rounded-l-none px-6 py-3">
+                    <span className="mr-2">Search</span>
+                    <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                   </Button>
                 </div>
               </div>
@@ -331,14 +372,15 @@ const SearchRides = () => {
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-8 flex-grow">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {filteredRides.length} rides available from {departure || "San Francisco"} to {destination || "Los Angeles"}
+      {/* Main Content Area */}
+      <div className="container mx-auto px-4 py-8 flex-grow max-w-6xl">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+            <span className="text-green-600">{filteredRides.length}</span> rides available from {departure || "San Francisco"} to {destination || "Los Angeles"}
           </h1>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center text-green-600 hover:text-green-800"
+            className="flex items-center text-green-600 hover:text-green-800 bg-white px-4 py-2 rounded-lg shadow-sm transition-all hover:shadow border border-green-100"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -347,20 +389,27 @@ const SearchRides = () => {
           </button>
         </div>
         
+        {/* Filters Panel */}
         {showFilters && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-6"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="mb-8"
           >
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-md">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Price Range</h3>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Price Range
+                  </h3>
                   <div className="flex items-center justify-between mb-2">
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
+                    <span className="text-green-600 font-medium">${priceRange[0]}</span>
+                    <span className="text-green-600 font-medium">${priceRange[1]}</span>
                   </div>
                   <input
                     type="range"
@@ -373,42 +422,67 @@ const SearchRides = () => {
                 </div>
                 
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Departure Time</h3>
-                  <select
-                    value={departureTime}
-                    onChange={(e) => setDepartureTime(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="any">Any time</option>
-                    <option value="morning">Morning (5am - 12pm)</option>
-                    <option value="afternoon">Afternoon (12pm - 5pm)</option>
-                    <option value="evening">Evening (5pm - 9pm)</option>
-                    <option value="night">Night (9pm - 5am)</option>
-                  </select>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Departure Time
+                  </h3>
+                  <div className="relative">
+                    <select
+                      value={departureTime}
+                      onChange={(e) => setDepartureTime(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all appearance-none"
+                    >
+                      <option value="any">Any time</option>
+                      <option value="morning">Morning (5am - 12pm)</option>
+                      <option value="afternoon">Afternoon (12pm - 5pm)</option>
+                      <option value="evening">Evening (5pm - 9pm)</option>
+                      <option value="night">Night (9pm - 5am)</option>
+                    </select>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </div>
                 </div>
                 
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Sort By</h3>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="departure_time">Departure Time</option>
-                    <option value="price_low">Price: Low to High</option>
-                    <option value="price_high">Price: High to Low</option>
-                    <option value="rating">Driver Rating</option>
-                  </select>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Sort By
+                  </h3>
+                  <div className="relative">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all appearance-none"
+                    >
+                      <option value="departure_time">Departure Time</option>
+                      <option value="price_low">Price: Low to High</option>
+                      <option value="price_high">Price: High to Low</option>
+                      <option value="rating">Driver Rating</option>
+                    </select>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </motion.div>
         )}
         
+        {/* No Results */}
         {filteredRides.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-16 bg-white rounded-xl shadow-md">
             <svg
-              className="w-16 h-16 text-gray-400 mx-auto mb-4"
+              className="w-20 h-20 text-gray-300 mx-auto mb-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -420,15 +494,16 @@ const SearchRides = () => {
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">No rides found</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">No rides found</h2>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
               Try adjusting your search criteria or check back later for new rides.
             </p>
             <Link to="/offer-ride">
-              <Button>Offer a Ride Instead</Button>
+              <Button className="px-8 py-3">Offer a Ride Instead</Button>
             </Link>
           </div>
         ) : (
+          /* Ride Cards */
           <div className="space-y-6">
             {filteredRides.map((ride, index) => (
               <motion.div
@@ -436,19 +511,29 @@ const SearchRides = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="p-6">
-                  <div className="flex flex-col md:flex-row">
-                    <div className="md:w-1/4 mb-4 md:mb-0">
+                  <div className="flex flex-col md:flex-row md:items-center">
+                    {/* Driver Info */}
+                    <div className="md:w-1/5 mb-6 md:mb-0 md:border-r md:border-gray-100 md:pr-4">
                       <div className="flex items-center">
-                        <img
-                          src={ride.driver.image}
-                          alt={ride.driver.name}
-                          className="w-12 h-12 rounded-full object-cover mr-4"
-                        />
+                        <div className="relative">
+                          <img
+                            src={ride.driver.image}
+                            alt={ride.driver.name}
+                            className="w-14 h-14 rounded-full object-cover mr-4 border-2 border-green-100"
+                          />
+                          {ride.driver.verifiedDriver && (
+                            <span className="absolute bottom-0 right-4 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
                         <div>
-                          <p className="font-medium">{ride.driver.name}</p>
+                          <p className="font-medium text-gray-800">{ride.driver.name}</p>
                           <div className="flex items-center">
                             <div className="flex">
                               {[...Array(5)].map((_, i) => (
@@ -469,68 +554,74 @@ const SearchRides = () => {
                               ))}
                             </div>
                             <span className="ml-1 text-sm text-gray-600">
-                              {ride.driver.rating}
+                              {ride.driver.rating} ({ride.driver.reviewCount})
                             </span>
                           </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="md:w-2/4 mb-4 md:mb-0">
-                      <div className="flex flex-col md:flex-row md:justify-between mb-2">
-                        <div className="mb-2 md:mb-0">
-                          <p className="text-lg font-semibold">
+                    {/* Trip Info */}
+                    <div className="md:w-3/5 mb-6 md:mb-0 md:px-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between">
+                        {/* Departure */}
+                        <div className="text-center md:text-left mb-4 md:mb-0">
+                          <p className="text-xl font-bold text-gray-800">
                             {formatTime(ride.departure.datetime)}
                           </p>
-                          <p className="text-gray-700">{ride.departure.city}</p>
+                          <p className="text-gray-700 font-medium">{ride.departure.city}</p>
                           <p className="text-sm text-gray-500">{ride.departure.location}</p>
+                          <p className="text-xs text-gray-400 mt-1">{formatDate(ride.departure.datetime)}</p>
                         </div>
                         
-                        <div className="hidden md:flex flex-col items-center justify-center px-4">
-                          <p className="text-sm text-gray-500 mb-1">
+                        {/* Trip Duration */}
+                        <div className="hidden md:flex flex-col items-center px-6">
+                          <div className="text-sm font-medium text-gray-500 mb-2">
                             {calculateDuration(ride.departure.datetime, ride.destination.datetime)}
-                          </p>
-                          <div className="relative w-24">
-                            <div className="absolute w-full h-0.5 bg-gray-300 top-1/2 transform -translate-y-1/2"></div>
+                          </div>
+                          <div className="relative w-32">
+                            <div className="absolute w-full h-0.5 bg-green-100 top-1/2 transform -translate-y-1/2"></div>
                             <div className="absolute left-0 w-3 h-3 bg-green-500 rounded-full top-1/2 transform -translate-y-1/2"></div>
                             <div className="absolute right-0 w-3 h-3 bg-green-500 rounded-full top-1/2 transform -translate-y-1/2"></div>
                           </div>
                         </div>
                         
-                        <div className="mb-2 md:mb-0">
-                          <p className="text-lg font-semibold">
+                        {/* Destination */}
+                        <div className="text-center md:text-right">
+                          <p className="text-xl font-bold text-gray-800">
                             {formatTime(ride.destination.datetime)}
                           </p>
-                          <p className="text-gray-700">{ride.destination.city}</p>
+                          <p className="text-gray-700 font-medium">{ride.destination.city}</p>
                           <p className="text-sm text-gray-500">{ride.destination.location}</p>
+                          <p className="text-xs text-gray-400 mt-1">{formatDate(ride.destination.datetime)}</p>
                         </div>
                       </div>
                       
-                      <div className="md:hidden flex items-center justify-center my-3">
-                        <div className="h-0.5 w-16 bg-gray-300 mx-3"></div>
-                        <p className="text-sm text-gray-500">
+                      {/* Mobile Trip Duration */}
+                      <div className="md:hidden flex items-center justify-center my-4">
+                        <div className="h-0.5 w-16 bg-green-100 mx-3"></div>
+                        <p className="text-sm font-medium text-gray-500">
                           {calculateDuration(ride.departure.datetime, ride.destination.datetime)}
                         </p>
-                        <div className="h-0.5 w-16 bg-gray-300 mx-3"></div>
-                      </div>
-                      
-                      <div className="flex items-center text-sm text-gray-600">
-                        <svg className="w-4 h-4 mr-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"></path>
-                        </svg>
-                        <span>{formatDate(ride.departure.datetime)}</span>
+                        <div className="h-0.5 w-16 bg-green-100 mx-3"></div>
                       </div>
                     </div>
                     
-                    <div className="md:w-1/4 flex flex-col items-start md:items-end justify-between">
-                      <div className="mb-4">
+                    {/* Price & Action */}
+                    <div className="md:w-1/5 flex flex-col md:items-end md:border-l md:border-gray-100 md:pl-4">
+                      <div className="mb-4 text-center md:text-right">
                         <p className="text-2xl font-bold text-green-600">${ride.price}</p>
-                        <p className="text-sm text-gray-500">
-                          {ride.availableSeats} {ride.availableSeats === 1 ? "seat" : "seats"} left
-                        </p>
+                        <div className="flex items-center justify-center md:justify-end mt-1">
+                          <svg className="w-4 h-4 text-gray-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                          </svg>
+                          <p className="text-sm text-gray-500">
+                            {ride.availableSeats} {ride.availableSeats === 1 ? "seat" : "seats"} left
+                          </p>
+                        </div>
                       </div>
-                      <Link to={`/rides/${ride.id}`} className="w-full md:w-auto">
-                        <Button className="w-full">View Details</Button>
+                      <Link to={`/rides/${ride.id}`} className="w-full">
+                        <Button className="w-full py-3">View Details</Button>
                       </Link>
                     </div>
                   </div>
@@ -540,12 +631,17 @@ const SearchRides = () => {
           </div>
         )}
         
-        <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-4">
-            Don't see a ride that works for you? Offer your own and earn money while traveling!
+        {/* Bottom CTA */}
+        <div className="mt-12 text-center bg-white rounded-xl shadow-md p-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">Don't see a ride that works for you?</h3>
+          <p className="text-gray-600 mb-6 max-w-lg mx-auto">
+            Offer your own ride and earn money while traveling! It's simple to create a listing and connect with people heading your way.
           </p>
-          <Link to="/offer-ride">
-            <Button className="bg-white text-green-600 border border-green-600 hover:bg-green-50">
+          <Link to="/register">
+            <Button className="bg-green-600 text-green-600 border-2 border-green-600 hover:bg-green-50 px-8 py-3">
+              <svg className="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
               Offer a Ride
             </Button>
           </Link>
