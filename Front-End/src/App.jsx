@@ -51,12 +51,12 @@ function App() {
   return (
     <Router>
       <Routes>
-    
-        <Route element={<PublicLayout />}>
-            <Route path="/login" element={<Login />} />
+    <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
           
+        <Route element={<PublicLayout />}>
+            
             <Route path="/" element={< Home />} />
             <Route path="/offer-ride" element={<SearchRides />} />
             <Route path="/how-it-works" element={<HowItWorks />} />

@@ -32,7 +32,16 @@ const Login = () => {
       toast.success("Login réussie !");
       const userResponse = await getCurrentUser();
       setUser(userResponse.data);
-      setTimeout(() => navigate('/offer-ride'), 0);
+      const role = userResponse.data.role;
+
+        if (role === "admin") {
+          navigate('/admin/dashboard');
+        } else if (role === "conducteur") {
+          navigate('/dashboard');
+        } else {
+          navigate('/offer-ride');
+        }
+
     } catch (error) {
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors; 
