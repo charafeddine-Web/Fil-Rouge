@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import logo from '../assets/logo.png';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -39,26 +40,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center shadow-lg shadow-green-200">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7h8m-8 5h8m-8 5h8M3 3h18v18H3z"
-                  />
-                  <circle cx="8.5" cy="7" r="1.5" fill="currentColor" />
-                  <circle cx="8.5" cy="12" r="1.5" fill="currentColor" />
-                  <circle cx="8.5" cy="17" r="1.5" fill="currentColor" />
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-gray-800">SwiftCar</span>
+                      <img src={logo} alt="logo"  width={150} height={50} />
+              
             </Link>
             <p className="text-gray-600 mb-6 max-w-md">
               Join our carpooling community and help reduce carbon emissions

@@ -268,7 +268,6 @@ const SearchRides = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       
       <div className="bg-green-50 py-6">
         <div className="container mx-auto px-4">

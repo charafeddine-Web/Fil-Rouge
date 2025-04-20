@@ -10,7 +10,10 @@ export const AuthContext = createContext();
   useEffect(() => {
     if (token) {
         getCurrentUser(token)
-        .then(setUser)
+        .then((response) => {
+          console.log("User Data:", response.data);  
+          setUser(response.data);
+        })
         .catch(() => {
           setToken(null);
           setUser(null);

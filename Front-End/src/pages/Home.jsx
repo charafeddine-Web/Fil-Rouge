@@ -298,7 +298,7 @@ const Home = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Why Choose CarShare?</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Why Choose SwiftCar?</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Our platform offers the best carpooling experience with benefits for both drivers and passengers.
             </p>
@@ -382,7 +382,7 @@ const Home = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-white">
+      {/* <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-800 mb-4">What Our Users Say</h2>
@@ -416,7 +416,7 @@ const Home = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section className="py-16 bg-green-600 text-white">
