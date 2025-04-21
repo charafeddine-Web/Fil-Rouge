@@ -39,7 +39,7 @@ import AnalyticsSection from './pages/admin/AnalyticsSection';
 // import Settings from './admin/Settings';
 
 function App() {
-  const { user ,loadingUser } = useContext(AuthContext);
+  const { user ,loadingUser,logout } = useContext(AuthContext);
 
   const PrivateRoute = ({ children }) => {
     if (loadingUser) return null;
@@ -81,16 +81,19 @@ function App() {
 
 
         {/* Layout Admin */}
-        <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
-          <Route path="/admin/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/DriversSection" element={<DriversSection />} />
-          <Route path="/dashboard/claims" element={<Réclamations />} />
-          <Route path="/dashboard/payments" element={<PaymentsSection />} />
-          <Route path="/dashboard/analytics" element={<AnalyticsSection />} />
-          {/* <Route path="/admin/rides" element={<RidesList />} />
-          <Route path="/admin/reports" element={<Reports />} /> */}
-          {/* <Route path="/admin/settings" element={<Settings />} /> */}
-        </Route>
+        {/* <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin/Drivers" element={<DriversSection />} />
+          <Route path="/admin/claims" element={<Réclamations />} />
+          <Route path="/admin/payments" element={<PaymentsSection />} />
+          <Route path="/admin/analytics" element={<AnalyticsSection />} />
+          <Route path="/admin/rides" element={<RidesList />} />
+          <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/settings" element={<Settings />} />
+        </Route> */}
+
+          {/* <Route path="/admin" element={<Navigate to="/admin/overview" />} /> */}
+          <Route path="/admin/:tabId" element={<AdminRoute><Dashboard user={user} logout={logout}/></AdminRoute>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

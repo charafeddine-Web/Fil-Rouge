@@ -1,24 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import { 
-  Home, 
-  Search, 
-  Users, 
-  Car, 
-  Clock, 
-  MessageCircle, 
-  CreditCard, 
-  Settings, 
-  BarChart2,
-  AlertTriangle,
   Menu, 
   X,
 } from 'lucide-react';
 
-const Sidebar = ({ activePage, navItems }) => {
+const Sidebar = ({ activePage, tabs ,user}) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
+const navigate=useNavigate();
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
@@ -41,7 +31,6 @@ const Sidebar = ({ activePage, navItems }) => {
     <>
       <MobileMenuButton />
       
-      {/* Sidebar for desktop and mobile */}
       <aside 
         className={`
           ${isCollapsed ? 'w-20' : 'w-64'} 
@@ -49,7 +38,6 @@ const Sidebar = ({ activePage, navItems }) => {
           fixed top-0 left-0 h-full bg-white shadow-lg transition-all duration-300 ease-in-out z-40
         `}
       >
-        {/* Top bar with logo and collapse button */}
         <div className="flex items-center justify-between border-b border-gray-100 py-4 px-4">
           <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : ''}`}>
             {!isCollapsed ? (
@@ -59,7 +47,6 @@ const Sidebar = ({ activePage, navItems }) => {
             )}
           </div>
           
-          {/* Only show collapse button on large screens */}
           <button 
             onClick={toggleCollapse} 
             className="text-gray-500 hover:text-green-600 focus:outline-none hidden lg:block"
@@ -80,27 +67,26 @@ const Sidebar = ({ activePage, navItems }) => {
           </button>
         </div>
         
-        {/* Navigation items */}
         <nav className="mt-6 px-3">
-          {navItems.map((item) => (
+          {tabs.map((tab) => (
             <Link
-              key={item.id}
-              to={item.path || '#'}
+              key={tab.id}
+              to={`/admin/${tab.id}`}
+              onClick={() => navigate(tab.path)}
               className={`
                 flex items-center py-3 px-4 my-1 rounded-lg transition-colors duration-200
-                ${activePage === item.id 
+                ${activePage === tab.id 
                   ? 'bg-green-50 text-green-600' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-green-600'
                 }
               `}
             >
-              <span className="text-lg">{item.icon}</span>
-              {!isCollapsed && <span className="ml-3 font-medium">{item.title}</span>}
+              <span className="text-lg">{tab.icon}</span>
+              {!isCollapsed && <span className="ml-3 font-medium">{tab.title}</span>}
             </Link>
           ))}
         </nav>
         
-        {/* Profile section at bottom */}
         <div className={`absolute bottom-0 w-full p-4 border-t border-gray-100 ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
             <div className="flex items-center">
@@ -108,8 +94,8 @@ const Sidebar = ({ activePage, navItems }) => {
                 US
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">User Name</p>
-                <p className="text-xs text-gray-500">user@example.com</p>
+                <p className="text-sm font-medium text-gray-700"> {user.nom} {user.prenom}</p>
+                <p className="text-xs text-gray-500">{user.email}</p>
               </div>
             </div>
           ) : (
@@ -134,10 +120,10 @@ const Sidebar = ({ activePage, navItems }) => {
           ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
         `}
       >
-        {/* Your page content goes here */}
       </div>
     </>
   );
 };
 
 export default Sidebar;
+
