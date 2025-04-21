@@ -32,15 +32,14 @@ const Login = () => {
       toast.success("Login réussie !");
       const userResponse = await getCurrentUser();
       setUser(userResponse.data);
-      const role = userResponse.data.role;
-
-        if (role === "admin") {
-          navigate('/admin/dashboard');
-        } else if (role === "conducteur") {
-          navigate('/dashboard');
-        } else {
-          navigate('/offer-ride');
-        }
+      // const role = userResponse.data.role;
+      const redirectUser = (role) => {
+        if (role === "admin") navigate('/admin/dashboard');
+        else if (role === "conducteur") navigate('/dashboard');
+        else navigate('/offer-ride');
+      };
+      redirectUser(userResponse.data.role);
+      
 
     } catch (error) {
       if (error.response?.data?.errors) {

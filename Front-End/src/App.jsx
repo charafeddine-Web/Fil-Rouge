@@ -32,31 +32,35 @@ import DriverDashboard from './pages/conductuer/DriverDashboard';
 
 // Pages admin
 import Dashboard from './pages/admin/Dashboard';
-import UsersList from './pages/admin/UsersList';
-import RidesList from './pages/admin/RidesList';
-import Reports from './pages/admin/Reports';
+import DriversSection from './pages/admin/DriversSection';
+import Réclamations from './pages/admin/Réclamations';
+import PaymentsSection from './pages/admin/PaymentsSection';
+import AnalyticsSection from './pages/admin/AnalyticsSection';
 // import Settings from './admin/Settings';
 
 function App() {
-  const { user } = useContext(AuthContext);
+  const { user ,loadingUser } = useContext(AuthContext);
 
   const PrivateRoute = ({ children }) => {
+    if (loadingUser) return null;
     return user ? children : <Navigate to="/login" />;
   };
 
   const AdminRoute = ({ children }) => {
+    if (loadingUser) return null; 
+
     return user && user.role === 'admin' ? children : <Navigate to="/login" />;
   };
 
   return (
     <Router>
       <Routes>
-    <Route path="/login" element={<Login />} />
+   
+        <Route element={<PublicLayout />}>
+            <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
           
-        <Route element={<PublicLayout />}>
-            
             <Route path="/" element={< Home />} />
             <Route path="/offer-ride" element={<SearchRides />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
@@ -64,7 +68,7 @@ function App() {
         </Route>
 
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
-          <Route path="/offer-ride" element={<SearchRides />} /> 
+          {/* <Route path="/offer-ride" element={<SearchRides />} />  */}
           <Route path="/my-rides" element={<MyRides />} />
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/Messaging" element={<Messaging />} />
@@ -74,12 +78,17 @@ function App() {
            <Route path="/edit-profile" element={<EditProfile />} />
         </Route>
 
+
+
         {/* Layout Admin */}
         <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route path="/admin/dashboard" element={<Dashboard />} />
-          <Route path="/admin/users" element={<UsersList />} />
-          <Route path="/admin/rides" element={<RidesList />} />
-          <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/dashboard/DriversSection" element={<DriversSection />} />
+          <Route path="/dashboard/claims" element={<Réclamations />} />
+          <Route path="/dashboard/payments" element={<PaymentsSection />} />
+          <Route path="/dashboard/analytics" element={<AnalyticsSection />} />
+          {/* <Route path="/admin/rides" element={<RidesList />} />
+          <Route path="/admin/reports" element={<Reports />} /> */}
           {/* <Route path="/admin/settings" element={<Settings />} /> */}
         </Route>
 

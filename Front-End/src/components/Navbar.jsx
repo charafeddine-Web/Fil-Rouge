@@ -21,10 +21,10 @@ const Navbar = ({ mobile = false }) => {
 
   const defaultNavLinks = [
     { name: "Home", path: "/" },
-    { name: "Search Rides", path: "/offer-ride" },
+    // { name: "Search Rides", path: "/offer-ride" },
     { name: "How it Works", path: "/how-it-works" },
-    // { name: "About Us", path: "/about" },
-    // { name: "Contact", path: "/contact" },
+    { name: "About Us", path: "/about" },
+    { name: "Contact", path: "/contact" },
   ];
 
   // Links for passengers

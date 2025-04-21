@@ -17,5 +17,12 @@ export const register = (data) => {
   };
   
 export const logout = () => api.post('/logout');
-export const getCurrentUser = () => api.get('/me');
+export const getCurrentUser = (token) => 
+  {
+    return api.get('/me', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  };
 export const verifyEmail = (data) => api.post('/verify-email', data);

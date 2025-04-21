@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
-
+import Loader from "../../components/Loader";
 export default function DriverDashboard() {
   const [loading, setLoading] = useState(true);
   const [driverData, setDriverData] = useState(null);
@@ -140,9 +140,7 @@ export default function DriverDashboard() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-      </div>
+    <Loader/>
     );
   }
 
