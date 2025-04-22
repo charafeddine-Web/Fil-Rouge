@@ -28,8 +28,7 @@ class AvisController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'passager_id' => 'required|exists:users,id',
-            'conducteur_id' => 'required|exists:conducteurs,id',
+            'reservation_id' => 'required|exists:reservations,id',
             'note' => 'required|integer|min:1|max:5',
             'commentaire' => 'nullable|string',
         ]);

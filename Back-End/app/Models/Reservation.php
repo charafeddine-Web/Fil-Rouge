@@ -16,6 +16,10 @@ class Reservation extends Model
         'places_reservees',
         'prix_total',
     ];
+    public function avis()
+    {
+        return $this->hasOne(Avis::class);
+    }
 
     public function passager()
     {

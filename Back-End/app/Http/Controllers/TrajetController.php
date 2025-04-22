@@ -25,8 +25,11 @@ class TrajetController extends Controller
             'conducteur_id' => 'required|exists:conducteurs,id',
             'lieu_depart' => 'required|string|max:255',
             'lieu_arrivee' => 'required|string|max:255',
-            'date_depart' => 'required|date',
-            'nombre_places' => 'required|integer|min:1',
+            'date_depart' => 'required|date|after_or_equal:now',
+            'nombre_places' => 'required|integer|min:1|max:10',
+            'prix_par_place' => 'required|numeric|min:0',
+            'bagages_autorises' => 'boolean',
+            'fumeur_autorise' => 'boolean',
         ]);
 
         $trajet = $this->trajetService->create($validated);
@@ -41,11 +44,16 @@ class TrajetController extends Controller
 
     public function update(Request $request, $trajet)
     {
+
         $validated = $request->validate([
             'lieu_depart' => 'sometimes|string|max:255',
             'lieu_arrivee' => 'sometimes|string|max:255',
-            'date_depart' => 'sometimes|date',
-            'nombre_places' => 'sometimes|integer|min:1',
+            'date_depart' => 'sometimes|date|after_or_equal:now',
+            'nombre_places' => 'sometimes|integer|min:1|max:10',
+            'prix_par_place' => 'sometimes|numeric|min:0',
+            'statut' => 'sometimes|in:planifié,en_cours,terminé,annulé',
+            'bagages_autorises' => 'boolean',
+            'fumeur_autorise' => 'boolean',
         ]);
 
         $updated = $this->trajetService->update($trajet, $validated);
@@ -58,5 +66,27 @@ class TrajetController extends Controller
         $this->trajetService->delete($trajet);
         return response()->json(['message' => 'Trajet supprimé avec succès.']);
     }
+
+
+
+    public function search(Request $request)
+    {
+        $request->validate([
+            'lieu_depart' => 'required|string',
+            'lieu_arrivee' => 'required|string',
+            'nombre_places'=> 'required|integer|min:1|max:10',
+        ]);
+
+        $lieu_depart = $request->input('lieu_depart');
+        $lieu_arrivee = $request->input('lieu_arrivee');
+        $nombre_places = $request->input('nombre_places');
+
+
+        $trajets = $this->trajetService->searchByLieux($lieu_depart, $lieu_arrivee,$nombre_places);
+
+        return response()->json($trajets);
+    }
+
+
 }
 

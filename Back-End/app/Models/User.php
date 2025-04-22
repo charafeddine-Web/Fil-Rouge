@@ -50,10 +50,7 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    public function avis()
-    {
-        return $this->hasMany(Avis::class);
-    }
+
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany

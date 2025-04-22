@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Loader from "../components/Loader";
 import Button from "../components/Button";
+import { getAllTrajets, searchTrajets } from '../services/trajets';
 
 const SearchRides = () => {
   const [searchParams] = useSearchParams();
@@ -24,141 +25,23 @@ const SearchRides = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching rides data
     const fetchRides = async () => {
       try {
-        // In a real app, this would be an API call with the search parameters
         setTimeout(() => {
-          const mockRides = [
-            {
-              id: "r1",
-              driver: {
-                id: "d1",
-                name: "Alex Thompson",
-                rating: 4.8,
-                reviewCount: 127,
-                image: "/images/drivers/alex.jpg",
-                verifiedDriver: true,
-              },
-              departure: {
-                city: searchParams.get("departure") || "San Francisco",
-                location: "Caltrain Station",
-                datetime: "2025-04-20T08:00:00",
-              },
-              destination: {
-                city: searchParams.get("destination") || "Los Angeles",
-                location: "Union Station",
-                datetime: "2025-04-20T16:00:00",
-              },
-              price: 45,
-              currency: "USD",
-              availableSeats: 3,
-              totalSeats: 4,
-            },
-            {
-              id: "r2",
-              driver: {
-                id: "d2",
-                name: "Emma Davis",
-                rating: 4.9,
-                reviewCount: 86,
-                image: "/images/drivers/emma.jpg",
-                verifiedDriver: true,
-              },
-              departure: {
-                city: searchParams.get("departure") || "San Francisco",
-                location: "Civic Center",
-                datetime: "2025-04-20T10:30:00",
-              },
-              destination: {
-                city: searchParams.get("destination") || "Los Angeles",
-                location: "Hollywood Blvd",
-                datetime: "2025-04-20T18:45:00",
-              },
-              price: 55,
-              currency: "USD",
-              availableSeats: 2,
-              totalSeats: 3,
-            },
-            {
-              id: "r3",
-              driver: {
-                id: "d3",
-                name: "Michael Rodriguez",
-                rating: 4.6,
-                reviewCount: 42,
-                image: "/images/drivers/michael.jpg",
-                verifiedDriver: false,
-              },
-              departure: {
-                city: searchParams.get("departure") || "San Francisco",
-                location: "Golden Gate Park",
-                datetime: "2025-04-20T06:15:00",
-              },
-              destination: {
-                city: searchParams.get("destination") || "Los Angeles",
-                location: "Santa Monica",
-                datetime: "2025-04-20T14:30:00",
-              },
-              price: 40,
-              currency: "USD",
-              availableSeats: 4,
-              totalSeats: 4,
-            },
-            {
-              id: "r4",
-              driver: {
-                id: "d4",
-                name: "Sophia Chen",
-                rating: 4.7,
-                reviewCount: 103,
-                image: "/images/drivers/sophia.jpg",
-                verifiedDriver: true,
-              },
-              departure: {
-                city: searchParams.get("departure") || "San Francisco",
-                location: "Financial District",
-                datetime: "2025-04-20T12:00:00",
-              },
-              destination: {
-                city: searchParams.get("destination") || "Los Angeles",
-                location: "Downtown LA",
-                datetime: "2025-04-20T20:15:00",
-              },
-              price: 60,
-              currency: "USD",
-              availableSeats: 1,
-              totalSeats: 3,
-            },
-            {
-              id: "r5",
-              driver: {
-                id: "d5",
-                name: "James Wilson",
-                rating: 4.5,
-                reviewCount: 67,
-                image: "/images/drivers/james.jpg",
-                verifiedDriver: false,
-              },
-              departure: {
-                city: searchParams.get("departure") || "San Francisco",
-                location: "Mission District",
-                datetime: "2025-04-20T15:45:00",
-              },
-              destination: {
-                city: searchParams.get("destination") || "Los Angeles",
-                location: "LAX Airport",
-                datetime: "2025-04-20T23:30:00",
-              },
-              price: 50,
-              currency: "USD",
-              availableSeats: 2,
-              totalSeats: 2,
-            },
-          ];
-          setRides(mockRides);
-          setFilteredRides(mockRides);
+          setLoading(true);
+          if (departure || destination || date || passengers) {
+            const searchResults =  searchTrajets({ departure, destination, date, passengers });
+            setRides(searchResults);
+            setFilteredRides(searchResults);
+          } else {
+            const allRides =  getAllTrajets();
+            setRides(allRides);
+            setFilteredRides(allRides);
+          }
+  
           setLoading(false);
+
+
         }, 1000);
       } catch (error) {
         console.error("Error fetching rides:", error);
@@ -172,15 +55,15 @@ const SearchRides = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     navigate({
-      pathname: "/search",
+      pathname: "/trajets/recherche",
       search: `?departure=${departure}&destination=${destination}&date=${date}&passengers=${passengers}`,
     });
     setLoading(true);
-    // In a real app, this would trigger a new API call
     setTimeout(() => {
       setLoading(false);
     }, 800);
   };
+
 
   const applyFilters = () => {
     let results = [...rides];

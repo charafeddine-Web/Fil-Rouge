@@ -27,10 +27,6 @@ class Conducteur extends User
             ->withPivot('note', 'commentaire', 'created_at')
             ->withTimestamps();
     }
-    public function avis()
-    {
-        return $this->hasMany(Avis::class);
-    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\belongsToMany

@@ -5,3 +5,16 @@ export const getTrajetById = (id) => api.get(`/trajets/${id}`);
 export const createTrajet = (data) => api.post('/trajets', data);
 export const updateTrajet = (id, data) => api.put(`/trajets/${id}`, data);
 export const deleteTrajet = (id) => api.delete(`/trajets/${id}`);
+
+
+
+// export const searchTrajets = () => api.get('/trajets/recherche');
+export const searchTrajets = async (query) => {
+    try {
+      const response = await api.get('/trajets/recherche', { params: { query } });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching trajets:', error);
+      throw error;
+    }
+  };

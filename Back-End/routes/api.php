@@ -19,6 +19,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
 
+    Route::get('/trajets/recherche', [TrajetController::class, 'search']);
+
     Route::apiResource('reservations', ReservationController::class);
     Route::apiResource('trajets', TrajetController::class);
     Route::apiResource('avis', AvisController::class);

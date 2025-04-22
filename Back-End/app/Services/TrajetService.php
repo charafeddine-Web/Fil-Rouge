@@ -38,4 +38,13 @@ class TrajetService
     {
         return $this->trajetRepository->delete($trajet);
     }
+    public function searchByLieux(string $lieu_depart, string $lieu_arrivee,$nombre_places)
+    {
+        return Trajet::where('lieu_depart', 'LIKE', "%{$lieu_depart}%")
+            ->where('lieu_arrivee', 'LIKE', "%{$lieu_arrivee}%")
+            ->where('nombre_places', 'LIKE', "%{$nombre_places}%")
+            ->get();
+    }
+
+
 }
