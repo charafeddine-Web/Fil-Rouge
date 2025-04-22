@@ -25,7 +25,7 @@ class TrajetController extends Controller
             'conducteur_id' => 'required|exists:conducteurs,id',
             'lieu_depart' => 'required|string|max:255',
             'lieu_arrivee' => 'required|string|max:255',
-            'date_depart' => 'required|date|after_or_equal:now',
+            'date_depart' => 'required|date',
             'nombre_places' => 'required|integer|min:1|max:10',
             'prix_par_place' => 'required|numeric|min:0',
             'bagages_autorises' => 'boolean',

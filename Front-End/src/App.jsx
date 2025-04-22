@@ -8,7 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
 import UserLayout from './layouts/UserLayout';
-import AdminLayout from './layouts/AdminLayout';
+// import AdminLayout from './layouts/AdminLayout';
 
 // Pages publiques
 import Home from './pages/Home';
@@ -21,7 +21,7 @@ import HowItWorks from './pages/HowItWorks'
 import NotFound from './pages/NotFound';
 
 // Pages utilisateur
-import OfferRide from './pages/OfferRide';
+// import OfferRide from './pages/OfferRide';
 import MyRides from './pages/conductuer/MyRides';
 import Reservations from './pages/conductuer/Reservations';
 import Profile from './pages/Profile';
@@ -32,10 +32,10 @@ import DriverDashboard from './pages/conductuer/DriverDashboard';
 
 // Pages admin
 import Dashboard from './pages/admin/Dashboard';
-import DriversSection from './pages/admin/DriversSection';
-import Réclamations from './pages/admin/Réclamations';
-import PaymentsSection from './pages/admin/PaymentsSection';
-import AnalyticsSection from './pages/admin/AnalyticsSection';
+// import DriversSection from './pages/admin/DriversSection';
+// import Réclamations from './pages/admin/Réclamations';
+// import PaymentsSection from './pages/admin/PaymentsSection';
+// import AnalyticsSection from './pages/admin/AnalyticsSection';
 // import Settings from './admin/Settings';
 
 function App() {
@@ -96,7 +96,13 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <ToastContainer position="top-right" autoClose={5000} />
+      <ToastContainer position="top-right" autoClose={5000} draggable   
+      hideProgressBar={false}
+      newestOnTop
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      pauseOnHover/>
     </Router>
   );
 }
