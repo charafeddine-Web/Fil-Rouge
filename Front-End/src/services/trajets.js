@@ -29,3 +29,7 @@ export const searchTrajets = async (params) => {
       throw error;
     }
   };
+
+
+  // Add this function to your existing API services
+export const getTrajetsByDriverId = (driverId) => api.get(`/conducteur/trajets/${driverId}`);

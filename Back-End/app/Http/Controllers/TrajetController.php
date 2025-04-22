@@ -87,6 +87,14 @@ class TrajetController extends Controller
     }
 
 
+    public function getTrajetsByConducteur($conducteurId)
+    {
+        $trajets=$this->trajetService->getTrajetByConducteur($conducteurId);
+        return response()->json($trajets);
+    }
+
+
+
 
 
 

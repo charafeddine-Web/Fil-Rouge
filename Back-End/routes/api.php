@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AvisController;
+use App\Http\Controllers\ConducteurController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -27,5 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/messages', [MessageController::class, 'send']);
 
+    Route::get('/conducteur/trajets/{conducteurId}', [TrajetController::class, 'getTrajetsByConducteur']);
+    Route::get('/conducteur/user/{id}', [ConducteurController::class, 'getByUserId']);
 
 });

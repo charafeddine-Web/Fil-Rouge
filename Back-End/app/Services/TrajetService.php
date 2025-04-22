@@ -77,6 +77,11 @@ class TrajetService
         return $query->get();
     }
 
+    public function getTrajetByConducteur($conducteurId)
+    {
+        $trajets = Trajet::where('conducteur_id', $conducteurId)->get();
+        return $trajets;
+    }
 
 
 //    public function searchByLieux(string $lieu_depart, string $lieu_arrivee,$nombre_places)

@@ -5,20 +5,22 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import Loader from "../../components/Loader";
 import Button from "../../components/Button";
+import {getTrajetsByDriverId} from '../../services/trajets';
+import {getConducteurByUserId} from '../../services/conducteur';
 
-const MyRide = () => {
+const MyRide = ({user}) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("active");
   const [rides, setRides] = useState({
     active: [],
     completed: [],
     draft: []
-  });
+  }); 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newRideForm, setNewRideForm] = useState({
     departure: {
       city: "",
-      location: "",
+      location: "", 
       date: "",
       time: ""
     },
@@ -34,202 +36,75 @@ const MyRide = () => {
   });
 
   useEffect(() => {
-    // Simulate fetching ride data
-    const fetchRides = async () => {
+    const fetchDriverRides = async () => {
       try {
-        setTimeout(() => {
-          // This would be replaced with an API call in a real application
-          const mockRides = {
-            active: [
-              {
-                id: "r1",
-                departure: {
-                  city: "San Francisco",
-                  location: "Caltrain Station",
-                  datetime: "2025-05-10T08:00:00",
-                },
-                destination: {
-                  city: "Los Angeles",
-                  location: "Union Station",
-                  datetime: "2025-05-10T16:00:00",
-                },
-                availableSeats: 2,
-                totalSeats: 4,
-                bookedSeats: 2,
-                price: 45, // per passenger
-                currency: "USD",
-                status: "active",
-                createdAt: "2025-04-15T10:30:00",
-                passengers: [
-                  {
-                    id: "p1",
-                    name: "Michael Brown",
-                    image: "/images/passengers/michael.jpg",
-                    rating: 4.7
-                  },
-                  {
-                    id: "p2",
-                    name: "Sarah Johnson",
-                    image: "/images/passengers/sarah.jpg",
-                    rating: 4.9
-                  }
-                ],
-                estimatedEarnings: 90,
-                description: "Direct drive to LA. Will make one short stop midway for a break."
-              },
-              {
-                id: "r2",
-                departure: {
-                  city: "Oakland",
-                  location: "Jack London Square",
-                  datetime: "2025-05-20T09:30:00",
-                },
-                destination: {
-                  city: "Sacramento",
-                  location: "Capitol Mall",
-                  datetime: "2025-05-20T12:00:00",
-                },
-                availableSeats: 3,
-                totalSeats: 3,
-                bookedSeats: 0,
-                price: 35,
-                currency: "USD",
-                status: "active",
-                createdAt: "2025-04-18T14:45:00",
-                passengers: [],
-                estimatedEarnings: 0,
-                description: "Morning commute to Sacramento. Clean car, good music, and on-time departure guaranteed."
-              }
-            ],
-            completed: [
-              {
-                id: "r3",
-                departure: {
-                  city: "San Francisco",
-                  location: "Mission District",
-                  datetime: "2025-04-01T10:00:00",
-                },
-                destination: {
-                  city: "San Jose",
-                  location: "Downtown",
-                  datetime: "2025-04-01T11:30:00",
-                },
-                availableSeats: 0,
-                totalSeats: 3,
-                bookedSeats: 3,
-                price: 28,
-                currency: "USD",
-                status: "completed",
-                createdAt: "2025-03-25T09:15:00",
-                passengers: [
-                  {
-                    id: "p3",
-                    name: "Jennifer Chen",
-                    image: "/images/passengers/jennifer.jpg",
-                    rating: 4.8,
-                    rated: true,
-                    yourRating: 5
-                  },
-                  {
-                    id: "p4",
-                    name: "David Wilson",
-                    image: "/images/passengers/david.jpg",
-                    rating: 4.6,
-                    rated: true,
-                    yourRating: 4
-                  },
-                  {
-                    id: "p5",
-                    name: "Emily Rodriguez",
-                    image: "/images/passengers/emily.jpg",
-                    rating: 4.9,
-                    rated: false
-                  }
-                ],
-                earnings: 84,
-                driverRating: 4.7,
-                description: "Quick morning trip to San Jose."
-              },
-              {
-                id: "r4",
-                departure: {
-                  city: "Berkeley",
-                  location: "UC Berkeley",
-                  datetime: "2025-03-15T15:30:00",
-                },
-                destination: {
-                  city: "Palo Alto",
-                  location: "Stanford University",
-                  datetime: "2025-03-15T16:45:00",
-                },
-                availableSeats: 0,
-                totalSeats: 4,
-                bookedSeats: 2,
-                price: 23,
-                currency: "USD",
-                status: "completed",
-                createdAt: "2025-03-10T11:20:00",
-                passengers: [
-                  {
-                    id: "p6",
-                    name: "Robert Taylor",
-                    image: "/images/passengers/robert.jpg",
-                    rating: 4.5,
-                    rated: true,
-                    yourRating: 5
-                  },
-                  {
-                    id: "p7",
-                    name: "Lisa Garcia",
-                    image: "/images/passengers/lisa.jpg",
-                    rating: 4.8,
-                    rated: true,
-                    yourRating: 5
-                  }
-                ],
-                earnings: 46,
-                driverRating: 5.0,
-                description: "Afternoon drive from Berkeley to Palo Alto. Perfect for students!"
-              }
-            ],
-            draft: [
-              {
-                id: "r5",
-                departure: {
-                  city: "San Francisco",
-                  location: "Financial District",
-                  datetime: "2025-06-05T07:15:00",
-                },
-                destination: {
-                  city: "Santa Clara",
-                  location: "Levi's Stadium",
-                  datetime: "2025-06-05T08:30:00",
-                },
-                availableSeats: 4,
-                totalSeats: 4,
-                bookedSeats: 0,
-                price: 30,
-                currency: "USD",
-                status: "draft",
-                createdAt: "2025-04-19T16:40:00",
-                passengers: [],
-                estimatedEarnings: 0,
-                description: "Early morning commute to Santa Clara. Perfect for those heading to work in the area."
-              }
-            ]
-          };
-          
-          setRides(mockRides);
+        setLoading(true);   
+  
+        if (!user || !user.id) {
+          console.error("No user ID available");
           setLoading(false);
-        }, 1000);
+          return;
+        }     
+        const conducteurRes = await getConducteurByUserId(user.id);
+        const conducteurId = conducteurRes.data.id;
+        console.log('conducteuuuuuuuuuuuuuur',conducteurId)
+        const response = await getTrajetsByDriverId(conducteurId);
+        console.log("API response:", response);
+  
+        // Map backend data structure to frontend structure
+        const mappedRides = response.data.map(trajet => ({
+          id: trajet.id,
+          departure: {
+            city: trajet.lieu_depart,
+            location: trajet.options?.lieu_depart_details || "",
+            datetime: trajet.date_depart
+          },
+          destination: {
+            city: trajet.lieu_arrivee,
+            location: trajet.options?.lieu_arrivee_details || "",
+            datetime: trajet.date_arrivee_prevue
+          },
+          availableSeats: trajet.nombre_places,
+          totalSeats: trajet.nombre_places,
+          bookedSeats: 0, // You might need to calculate this from reservations
+          price: parseFloat(trajet.prix_par_place),
+          currency: "USD",
+          status: mapStatus(trajet.statut),
+          createdAt: trajet.created_at,
+          passengers: [], // You might need to fetch this separately
+          estimatedEarnings: parseFloat(trajet.prix_par_place) * trajet.nombre_places,
+          description: trajet.description || ""
+        }));
+  
+        const active = mappedRides.filter(ride => ride.status === "active");
+        const completed = mappedRides.filter(ride => ride.status === "completed");
+        const draft = mappedRides.filter(ride => ride.status === "draft");
+        
+        setRides({
+          active,
+          completed,
+          draft
+        });
       } catch (error) {
-        console.error("Error fetching rides:", error);
+        console.error("Error fetching driver rides:", error);
+      } finally {
         setLoading(false);
       }
     };
-
-    fetchRides();
-  }, []);
+  
+    // Helper function to map backend status to frontend status
+    const mapStatus = (backendStatus) => {
+      switch (backendStatus) {
+        case "planifié": return "active";
+        case "terminé": return "completed";
+        case "annulé": return "completed"; 
+        case "en_cours": return "active";
+        default: return "draft";
+      }
+    };
+  
+    fetchDriverRides();
+  }, [user]);
 
   const formatDate = (dateTimeString) => {
     return new Date(dateTimeString).toLocaleDateString('en-US', {
@@ -276,26 +151,37 @@ const MyRide = () => {
       });
     }
   };
-
   const handleSubmitNewRide = (e) => {
     e.preventDefault();
     
-    // Combine date and time fields into datetime strings
-    const departureDateTime = new Date(`${newRideForm.departure.date}T${newRideForm.departure.time}`).toISOString();
-    const destinationDateTime = new Date(`${newRideForm.destination.date}T${newRideForm.destination.time}`).toISOString();
+    // Prepare data for backend format
+    const rideData = {
+      lieu_depart: newRideForm.departure.city,
+      lieu_arrivee: newRideForm.destination.city,
+      date_depart: new Date(`${newRideForm.departure.date}T${newRideForm.departure.time}`).toISOString(),
+      date_arrivee_prevue: new Date(`${newRideForm.destination.date}T${newRideForm.destination.time}`).toISOString(),
+      nombre_places: parseInt(newRideForm.availableSeats),
+      prix_par_place: parseFloat(newRideForm.price),
+      description: newRideForm.description,
+      options: JSON.stringify({
+        lieu_depart_details: newRideForm.departure.location,
+        lieu_arrivee_details: newRideForm.destination.location
+      }),
+      statut: "planifié" // For a draft, you might want a different status
+    };
     
-    // Create new ride object
+    // Add to draft rides in local state
     const newRide = {
       id: `draft-${Date.now()}`,
       departure: {
         city: newRideForm.departure.city,
         location: newRideForm.departure.location,
-        datetime: departureDateTime,
+        datetime: new Date(`${newRideForm.departure.date}T${newRideForm.departure.time}`).toISOString()
       },
       destination: {
         city: newRideForm.destination.city,
         location: newRideForm.destination.location,
-        datetime: destinationDateTime,
+        datetime: new Date(`${newRideForm.destination.date}T${newRideForm.destination.time}`).toISOString()
       },
       availableSeats: parseInt(newRideForm.availableSeats),
       totalSeats: parseInt(newRideForm.availableSeats),
@@ -305,9 +191,12 @@ const MyRide = () => {
       status: "draft",
       createdAt: new Date().toISOString(),
       passengers: [],
-      estimatedEarnings: 0,
+      estimatedEarnings: parseFloat(newRideForm.price) * parseInt(newRideForm.availableSeats),
       description: newRideForm.description
     };
+    
+    // Here you would typically send rideData to your backend API
+    // const response = await createTrajet(rideData);
     
     // Add to draft rides
     setRides({
@@ -438,25 +327,7 @@ const MyRide = () => {
           </Button>
         </div>
         
-        {/* Stats Cards */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <p className="text-gray-500 text-sm mb-1">Active Rides</p>
-            <h2 className="text-3xl font-bold text-gray-800">{rides.active.length}</h2>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <p className="text-gray-500 text-sm mb-1">Completed Rides</p>
-            <h2 className="text-3xl font-bold text-gray-800">{rides.completed.length}</h2>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <p className="text-gray-500 text-sm mb-1">Total Earnings</p>
-            <h2 className="text-3xl font-bold text-green-600">
-              ${rides.completed.reduce((sum, ride) => sum + ride.earnings, 0)}
-            </h2>
-          </div>
-        </div> */}
+       
         
         {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-8">
@@ -546,7 +417,7 @@ const MyRide = () => {
                       </h2>
                       <p className="text-sm text-gray-500">
                         Created on {formatDate(ride.createdAt)} • 
-                        Ride #{ride.id.substring(0, 5)}
+                        Ride #{ride.id.toString().substring(0, 5)}
                       </p>
                     </div>
                   </div>
