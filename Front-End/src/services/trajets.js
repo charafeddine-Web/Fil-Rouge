@@ -9,9 +9,20 @@ export const deleteTrajet = (id) => api.delete(`/trajets/${id}`);
 
 
 // export const searchTrajets = () => api.get('/trajets/recherche');
-export const searchTrajets = async (query) => {
+export const searchTrajets = async (params) => {
     try {
-      const response = await api.get('/trajets/recherche', { params: { query } });
+      const searchParams = {
+        lieu_depart: params.departure || '',
+        lieu_arrivee: params.destination || '',
+        date_depart: params.date || '',
+        nombre_places: params.passengers || '',
+        min_prix: params.minPrice || '',
+        max_prix: params.maxPrice || '',
+        fumeur_autorise: params.smokeAllowed,
+        bagages_autorises: params.luggageAllowed
+      };
+      
+      const response = await api.get('/trajets/recherche', { params: searchParams });
       return response.data;
     } catch (error) {
       console.error('Error searching trajets:', error);

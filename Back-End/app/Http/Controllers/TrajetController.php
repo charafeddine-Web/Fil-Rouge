@@ -68,24 +68,46 @@ class TrajetController extends Controller
     }
 
 
-
     public function search(Request $request)
     {
-        $request->validate([
-            'lieu_depart' => 'required|string',
-            'lieu_arrivee' => 'required|string',
-            'nombre_places'=> 'required|integer|min:1|max:10',
+        $validated = $request->validate([
+            'lieu_depart' => 'nullable|string',
+            'lieu_arrivee' => 'nullable|string',
+            'nombre_places' => 'nullable|integer|min:1|max:10',
+            'date_depart' => 'nullable|date|after_or_equal:today',
+            'fumeur_autorise' => 'nullable|boolean',
+            'bagages_autorises' => 'nullable|boolean',
+            'min_prix' => 'nullable|numeric|min:0',
+            'max_prix' => 'nullable|numeric|min:0',
         ]);
 
-        $lieu_depart = $request->input('lieu_depart');
-        $lieu_arrivee = $request->input('lieu_arrivee');
-        $nombre_places = $request->input('nombre_places');
+        $result = $this->trajetService->searchAndFilter($validated);
 
-
-        $trajets = $this->trajetService->searchByLieux($lieu_depart, $lieu_arrivee,$nombre_places);
-
-        return response()->json($trajets);
+        return response()->json($result);
     }
+
+
+
+
+
+
+//    public function search(Request $request)
+//    {
+//        $request->validate([
+//            'lieu_depart' => 'required|string',
+//            'lieu_arrivee' => 'required|string',
+//            'nombre_places'=> 'required|integer|min:1|max:10',
+//        ]);
+//
+//        $lieu_depart = $request->input('lieu_depart');
+//        $lieu_arrivee = $request->input('lieu_arrivee');
+//        $nombre_places = $request->input('nombre_places');
+//
+//
+//        $trajets = $this->trajetService->searchByLieux($lieu_depart, $lieu_arrivee,$nombre_places);
+//
+//        return response()->json($trajets);
+//    }
 
 
 }
