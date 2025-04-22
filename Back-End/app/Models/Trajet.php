@@ -24,9 +24,11 @@ class Trajet extends Model
         'options'
     ];
 
+
     public function conducteur()
     {
-        return $this->belongsTo(Conducteur::class);
+        return $this->belongsTo(Conducteur::class, 'conducteur_id');
+
     }
 
     /**

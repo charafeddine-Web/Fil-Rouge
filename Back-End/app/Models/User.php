@@ -39,18 +39,6 @@ class User extends Authenticatable
         return $this->type === 'admin';
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     * relation entre pasqager et condicteur avec table pivot Avis
-     */
-    public function conducteurs()
-    {
-        return $this->belongsToMany(Conducteur::class, 'avis', 'passager_id', 'conducteur_id')
-            ->withPivot('note', 'commentaire', 'created_at')
-            ->withTimestamps();
-    }
-
-
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany

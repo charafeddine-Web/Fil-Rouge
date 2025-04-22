@@ -29,7 +29,7 @@ const Navbar = ({ mobile = false }) => {
 
   // Links for passengers
   const passengerLinks = [
-    { name: "Home", path: "/" },
+    // { name: "Home", path: "/" },
     { name: "Search Rides", path: "/offer-ride" },
     { name: "My Reservations", path: "/Myreservations" },
     { name: "Messaging", path: "/messaging" },

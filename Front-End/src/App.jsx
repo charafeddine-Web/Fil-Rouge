@@ -55,21 +55,19 @@ function App() {
   return (
     <Router>
       <Routes>
-   
-        <Route element={<PublicLayout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
           
+        <Route element={<PublicLayout />}>
             <Route path="/" element={< Home />} />
-            <Route path="/offer-ride" element={<SearchRides />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/ride/:id" element={<RideDetails />} />
         </Route>
 
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
-          {/* <Route path="/offer-ride" element={<SearchRides />} />  */}
           <Route path="/my-rides" element={<MyRides />} />
+          <Route path="/offer-ride" element={<SearchRides />} /> 
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/Messaging" element={<Messaging />} />
           <Route path="/dashboard" element={<DriverDashboard />} />

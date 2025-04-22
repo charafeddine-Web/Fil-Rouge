@@ -21,11 +21,10 @@ class Conducteur extends User
         'photo_permis',
         'photo_identite',
     ];
-    public function passagers()
+
+    public function user()
     {
-        return $this->belongsToMany(Passager::class, 'avis', 'conducteur_id', 'passager_id')
-            ->withPivot('note', 'commentaire', 'created_at')
-            ->withTimestamps();
+        return $this->belongsTo(User::class);
     }
 
     /**

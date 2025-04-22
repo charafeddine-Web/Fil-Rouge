@@ -12,13 +12,8 @@ return new class extends Migration
     public function up()
     {
         Schema::table('trajets', function (Blueprint $table) {
-            $table->decimal('prix_par_place', 8, 2);
-            $table->text('description')->nullable();
-            $table->enum('statut', ['planifié', 'en_cours', 'terminé', 'annulé'])->default('planifié');
-            $table->boolean('bagages_autorises')->default(true);
-            $table->boolean('animaux_autorises')->default(false);
-            $table->boolean('fumeur_autorise')->default(false);
-            $table->json('options')->nullable();
+            $table->dateTime('date_arrivee_prevue')->nullable();
+
         });
     }
 
