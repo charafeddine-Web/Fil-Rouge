@@ -70,7 +70,7 @@ function App() {
           <Route path="/offer-ride" element={<SearchRides />} /> 
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/Messaging" element={<Messaging />} />
-          <Route path="/dashboard" element={<DriverDashboard />} />
+          <Route path="/dashboard" element={<DriverDashboard user={user}/>} />
           <Route path="/Myreservations" element={<My_Reservations />} />
           <Route path="/profile" element={<Profile />} />
            <Route path="/edit-profile" element={<EditProfile />} />

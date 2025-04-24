@@ -3,120 +3,59 @@ import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import Loader from "../../components/Loader";
-export default function DriverDashboard() {
+import { getTrajetsByDriverId} from "../../services/trajets";
+import {getConducteurByUserId} from "../../services/conducteur";
+
+export default function DriverDashboard({user}) {
   const [loading, setLoading] = useState(true);
   const [driverData, setDriverData] = useState(null);
   const [activeSection, setActiveSection] = useState("overview");
 
-  // Simulation d'appel API pour récupérer les données du conducteur
   useEffect(() => {
-    setTimeout(() => {
-      const mockDriverData = {
-        id: "d1",
-        name: "Alex Thompson",
-        profileImage: "/api/placeholder/100/100",
-        rating: 4.8,
-        totalRides: 124,
-        earningsThisMonth: 2450.75,
-        earningsTotal: 12850.25,
-        isVerified: true,
-        upcomingRides: [
-          {
-            id: "r1",
-            departure: {
-              city: "Paris",
-              location: "Gare de Lyon",
-              datetime: "2025-05-10T08:00:00",
-            },
-            destination: {
-              city: "Lyon",
-              location: "Part-Dieu",
-              datetime: "2025-05-10T11:00:00",
-            },
-            passengers: 3,
-            price: 45.00,
-            status: "Confirmé",
-          },
-          {
-            id: "r2",
-            departure: {
-              city: "Lyon",
-              location: "Part-Dieu",
-              datetime: "2025-05-11T16:30:00",
-            },
-            destination: {
-              city: "Paris",
-              location: "Gare de Lyon",
-              datetime: "2025-05-11T19:30:00",
-            },
-            passengers: 2,
-            price: 42.50,
-            status: "En attente",
-          },
-        ],
-        completedRides: [
-          {
-            id: "r3",
-            departure: {
-              city: "Paris",
-              location: "Gare du Nord",
-              datetime: "2025-04-15T10:00:00",
-            },
-            destination: {
-              city: "Lille",
-              location: "Gare Lille Flandres",
-              datetime: "2025-04-15T12:00:00",
-            },
-            passengers: 4,
-            price: 35.00,
-            rating: 5,
-            status: "Terminé",
-          },
-          {
-            id: "r4",
-            departure: {
-              city: "Lille",
-              location: "Gare Lille Flandres",
-              datetime: "2025-04-16T18:00:00",
-            },
-            destination: {
-              city: "Paris",
-              location: "Gare du Nord",
-              datetime: "2025-04-16T20:00:00",
-            },
-            passengers: 3,
-            price: 32.50,
-            rating: 4,
-            status: "Terminé",
-          },
-        ],
-        vehicle: {
-          model: "Peugeot 3008",
-          year: 2023,
-          color: "Gris",
-          licensePlate: "AB-123-CD",
-          seats: 4,
-        },
-        notifications: [
-          {
-            id: "n1",
-            type: "booking",
-            message: "Nouvelle réservation pour votre trajet Paris-Lyon",
-            datetime: "2025-04-19T14:32:00",
-            isRead: false,
-          },
-          {
-            id: "n2",
-            type: "payment",
-            message: "Paiement reçu de 45€ pour le trajet Paris-Lyon",
-            datetime: "2025-04-18T09:15:00",
-            isRead: true,
-          },
-        ],
-      };
-      setDriverData(mockDriverData);
-      setLoading(false);
-    }, 1000);
+    const fetchDriverData = async () => {
+      try {
+        setLoading(true);
+        if (!user || !user.id) {
+          console.error("No user ID available")
+          setLoading(false)
+          return
+        }
+        const conducteurRes = await getConducteurByUserId(user.id)
+        const conducteurId = conducteurRes.data.id
+
+        const response = await getTrajetsByDriverId(conducteurId);
+        
+        // Transformer les données de l'API pour correspondre à la structure attendue
+        const transformedData = {
+          id: conducteurId,
+          name: response.data.nom || "Conducteur",
+          profileImage: response.data.photoDeProfil || "/api/placeholder/100/100",
+          rating: response.data.note_moyenne || 0,
+          totalRides: response.data.totalRides || 0,
+          earningsThisMonth: response.data.earningsThisMonth || 0,
+          earningsTotal: response.data.earningsTotal || 0,
+          isVerified: response.data.email_verified || false,
+          upcomingRides: response.data.upcomingRides || [],
+          completedRides: response.data.completedRides || [],
+          vehicle: response.data.vehicle || {
+            model: "",
+            year: "",
+            color: "",
+            licensePlate: "",
+            seats: 0
+          }
+        };
+
+        setDriverData(transformedData);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données du conducteur:", error);
+        // Gérer l'erreur (afficher un message d'erreur, etc.)
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDriverData();
   }, []);
 
   const formatDate = (dateString) => {
