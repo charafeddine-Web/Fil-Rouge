@@ -7,6 +7,7 @@ import Header from "../components/Header";
 
 import RideCard from '../components/RideCard';
 import { getAllTrajets, searchTrajets } from '../services/trajets';
+import Footer from "../components/Footer";
 
 const SearchRides = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -556,8 +557,9 @@ const SearchRides = () => {
           </div>
         </div>
       </div>
-      
+      <Footer/>
     </div>
+    
   );
 };
 

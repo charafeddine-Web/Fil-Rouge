@@ -73,7 +73,7 @@ function App() {
           <Route path="/dashboard" element={<DriverDashboard user={user}/>} />
           <Route path="/Myreservations" element={<My_Reservations />} />
           <Route path="/profile" element={<Profile />} />
-           <Route path="/edit-profile" element={<EditProfile />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
         </Route>
 
 

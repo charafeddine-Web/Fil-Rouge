@@ -71,11 +71,9 @@ const Profile = () => {
           email: userData.email || "",
           phone: userData.telephone || "",
           birthDate: userData.date_naissance || "",
-          bio: userData.bio || "",
           profileImage: userData.photoDeProfil || null,
           address: userData.conducteur?.adresse || "",
           city: userData.conducteur?.ville || "",
-          preferredLanguage: userData.langue_preferee || "french",
       
           verifications: {
             email: userData.email_verified || false,
@@ -145,76 +143,117 @@ const Profile = () => {
       // Prepare the data for the API
       const formData = new FormData();
       
-      // Add basic user information
-      formData.append('prenom', profile.firstName);
-      formData.append('nom', profile.lastName);
-      formData.append('email', profile.email);
-      formData.append('telephone', profile.phone);
-      formData.append('date_naissance', profile.birthDate);
-      formData.append('langue_preferee', profile.preferredLanguage);
+      // Add basic user information (matching users table)
+      if (profile.firstName) formData.append('prenom', profile.firstName);
+      if (profile.lastName) formData.append('nom', profile.lastName);
+      if (profile.email) formData.append('email', profile.email);
+      if (profile.phone) formData.append('telephone', profile.phone);
+
+      // Handle profile image upload
+      if (profile.profileImage && profile.profileImage.startsWith('blob:')) {
+        try {
+          const response = await fetch(profile.profileImage);
+          const blob = await response.blob();
+          formData.append('photoDeProfil', blob, 'profile-image.jpg');
+        } catch (error) {
+          console.error('Error processing profile image:', error);
+        }
+      }
 
       // If user is a driver, add driver-specific information
       if (user?.role === 'conducteur') {
-        formData.append('adresse', profile.address);
-        formData.append('ville', profile.city);
+        // Add driver information
+        if (profile.address) formData.append('adresse', profile.address);
+        if (profile.city) formData.append('ville', profile.city);
+        if (profile.birthDate) formData.append('date_naissance', profile.birthDate);
+        if (driverInfo?.num_permis) formData.append('num_permis', driverInfo.num_permis);
+        if (driverInfo?.sexe) formData.append('sexe', driverInfo.sexe);
+
+        // Handle driver's license photo
+        if (driverInfo?.photo_permis && driverInfo.photo_permis.startsWith('blob:')) {
+          try {
+            const response = await fetch(driverInfo.photo_permis);
+            const blob = await response.blob();
+            formData.append('photo_permis', blob, 'license-image.jpg');
+          } catch (error) {
+            console.error('Error processing license image:', error);
+          }
+        }
+
+        // Handle ID photo
+        if (driverInfo?.photo_identite && driverInfo.photo_identite.startsWith('blob:')) {
+          try {
+            const response = await fetch(driverInfo.photo_identite);
+            const blob = await response.blob();
+            formData.append('photo_identite', blob, 'id-image.jpg');
+          } catch (error) {
+            console.error('Error processing ID image:', error);
+          }
+        }
       }
 
-      // If there's a new profile image, add it
-      if (profile.profileImage && profile.profileImage.startsWith('blob:')) {
-        const response = await fetch(profile.profileImage);
-        const blob = await response.blob();
-        formData.append('photo_de_profil', blob, 'profile-image.jpg');
+      // Log the FormData contents for debugging
+      console.log('FormData contents:');
+      for (let pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1] instanceof Blob ? 'Blob data' : pair[1]}`);
       }
 
       // Call the API to update the profile
-      await updateProfile(formData, token);
-      
-      // Refresh user data
-      const response = await getCurrentUser(token);
-      const userData = response.data;
-      
-      // If user is a driver, refresh driver data
-      if (userData.role === 'conducteur') {
-        const driverResponse = await getConducteurByUserId(userData.id);
-        userData.conducteur = driverResponse.data;
-      }
+      const response = await updateProfile(formData, token);
+      console.log('API Response:', response);
 
-      // Update the profile state with new data
-      setProfile({
-        firstName: userData.prenom || "",
-        lastName: userData.nom || "",
-        email: userData.email || "",
-        phone: userData.telephone || "",
-        birthDate: userData.date_naissance || "",
-        bio: userData.bio || "",
-        profileImage: userData.photoDeProfil || null,
-        address: userData.conducteur?.adresse || "",
-        city: userData.conducteur?.ville || "",
-        preferredLanguage: userData.langue_preferee || "french",
-        verifications: {
-          email: userData.email_verified || false,
-          phone: userData.telephone_verified || false,
-          identity: !!userData.conducteur?.photo_identite,
-          drivingLicense: !!userData.conducteur?.photo_permis
+      if (response.data) {
+        // Refresh user data
+        const userResponse = await getCurrentUser(token);
+        const userData = userResponse.data;
+        
+        // If user is a driver, refresh driver data
+        if (userData.role === 'conducteur') {
+          const driverResponse = await getConducteurByUserId(userData.id);
+          userData.conducteur = driverResponse.data;
         }
-      });
 
-      // Update driver info if user is a driver
-      if (userData.role === 'conducteur' && userData.conducteur) {
-        setDriverInfo(userData.conducteur);
+        // Update the profile state with new data
+        setProfile({
+          firstName: userData.prenom || "",
+          lastName: userData.nom || "",
+          email: userData.email || "",
+          phone: userData.telephone || "",
+          birthDate: userData.conducteur?.date_naissance || "",
+          profileImage: userData.photoDeProfil || null,
+          address: userData.conducteur?.adresse || "",
+          city: userData.conducteur?.ville || "",
+          verifications: {
+            email: userData.email_verified || false,
+            phone: userData.telephone_verified || false,
+            identity: !!userData.conducteur?.photo_identite,
+            drivingLicense: !!userData.conducteur?.photo_permis
+          }
+        });
+
+        // Update driver info if user is a driver
+        if (userData.role === 'conducteur' && userData.conducteur) {
+          setDriverInfo(userData.conducteur);
+        }
+
+        setIsEditing(false);
+        setSaveSuccess(true);
+        toast.success(response.data.message || "Profile updated successfully!");
+        
+        // Reset success message after 3 seconds
+        setTimeout(() => {
+          setSaveSuccess(false);
+        }, 3000);
       }
-
-      setIsEditing(false);
-      setSaveSuccess(true);
-      toast.success("Profile updated successfully!");
-      
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      console.error("Error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+      const errorMessage = error.response?.data?.message || "Failed to update profile";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
