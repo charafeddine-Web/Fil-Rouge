@@ -5,6 +5,9 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import Loader from "../../components/Loader";
 import Button from "../../components/Button";
+import { getReservationsByUserId, cancelReservation } from "../../services/reservationService";
+import { AuthContext } from "../../context/AuthContext";
+import { useContext } from "react";
 
 const MyReservations = () => {
   const [loading, setLoading] = useState(true);
@@ -14,183 +17,43 @@ const MyReservations = () => {
     past: [],
     canceled: []
   });
+  const { user, loadingUser } = useContext(AuthContext);
   
   useEffect(() => {
-    // Simulate fetching reservations data
     const fetchReservations = async () => {
+      if (!user) return;
+      
       try {
-        setTimeout(() => {
-          // This would be replaced with an API call in a real application
-          const mockReservations = {
-            upcoming: [
-              {
-                id: "res1",
-                ride: {
-                  id: "r1",
-                  departure: {
-                    city: "San Francisco",
-                    location: "Caltrain Station",
-                    datetime: "2025-05-10T08:00:00",
-                  },
-                  destination: {
-                    city: "Los Angeles",
-                    location: "Union Station",
-                    datetime: "2025-05-10T16:00:00",
-                  },
-                },
-                driver: {
-                  id: "d1",
-                  name: "Alex Thompson",
-                  image: "/images/drivers/alex.jpg",
-                  rating: 4.8,
-                  verifiedDriver: true,
-                },
-                passengers: 2,
-                price: 90, // Total price for 2 passengers
-                currency: "USD",
-                status: "confirmed",
-                bookingDate: "2025-04-15T10:30:00",
-                paymentMethod: "Credit Card (•••• 1234)",
-              },
-              {
-                id: "res2",
-                ride: {
-                  id: "r2",
-                  departure: {
-                    city: "Oakland",
-                    location: "Jack London Square",
-                    datetime: "2025-05-20T09:30:00",
-                  },
-                  destination: {
-                    city: "Sacramento",
-                    location: "Capitol Mall",
-                    datetime: "2025-05-20T12:00:00",
-                  },
-                },
-                driver: {
-                  id: "d2",
-                  name: "Emma Davis",
-                  image: "/images/drivers/emma.jpg",
-                  rating: 4.9,
-                  verifiedDriver: true,
-                },
-                passengers: 1,
-                price: 35,
-                currency: "USD",
-                status: "pending",
-                bookingDate: "2025-04-18T14:45:00",
-                paymentMethod: "PayPal",
-              }
-            ],
-            past: [
-              {
-                id: "res3",
-                ride: {
-                  id: "r3",
-                  departure: {
-                    city: "San Francisco",
-                    location: "Mission District",
-                    datetime: "2025-04-01T10:00:00",
-                  },
-                  destination: {
-                    city: "San Jose",
-                    location: "Downtown",
-                    datetime: "2025-04-01T11:30:00",
-                  },
-                },
-                driver: {
-                  id: "d3",
-                  name: "Michael Rodriguez",
-                  image: "/images/drivers/michael.jpg",
-                  rating: 4.6,
-                  verifiedDriver: false,
-                },
-                passengers: 1,
-                price: 28,
-                currency: "USD",
-                status: "completed",
-                bookingDate: "2025-03-25T09:15:00",
-                paymentMethod: "Credit Card (•••• 5678)",
-                userRated: false,
-              },
-              {
-                id: "res4",
-                ride: {
-                  id: "r4",
-                  departure: {
-                    city: "Berkeley",
-                    location: "UC Berkeley",
-                    datetime: "2025-03-15T15:30:00",
-                  },
-                  destination: {
-                    city: "Palo Alto",
-                    location: "Stanford University",
-                    datetime: "2025-03-15T16:45:00",
-                  },
-                },
-                driver: {
-                  id: "d4",
-                  name: "Sophia Chen",
-                  image: "/images/drivers/sophia.jpg",
-                  rating: 4.7,
-                  verifiedDriver: true,
-                },
-                passengers: 2,
-                price: 46,
-                currency: "USD",
-                status: "completed",
-                bookingDate: "2025-03-10T11:20:00",
-                paymentMethod: "Apple Pay",
-                userRated: true,
-                userRating: 5,
-              }
-            ],
-            canceled: [
-              {
-                id: "res5",
-                ride: {
-                  id: "r5",
-                  departure: {
-                    city: "San Francisco",
-                    location: "Financial District",
-                    datetime: "2025-03-05T07:15:00",
-                  },
-                  destination: {
-                    city: "Santa Clara",
-                    location: "Levi's Stadium",
-                    datetime: "2025-03-05T08:30:00",
-                  },
-                },
-                driver: {
-                  id: "d5",
-                  name: "James Wilson",
-                  image: "/images/drivers/james.jpg",
-                  rating: 4.5,
-                  verifiedDriver: false,
-                },
-                passengers: 1,
-                price: 30,
-                currency: "USD",
-                status: "canceled_by_passenger",
-                bookingDate: "2025-02-28T16:40:00",
-                cancelDate: "2025-03-01T09:15:00",
-                refundAmount: 25.50,
-                refundStatus: "processed",
-              }
-            ]
-          };
-          
-          setReservations(mockReservations);
-          setLoading(false);
-        }, 1000);
+        setLoading(true);
+        const response = await getReservationsByUserId(user.id);
+        const allReservations = response.data;
+        
+        const categorizedReservations = {
+          upcoming: allReservations.filter(res => 
+            ['en_attente', 'confirmee'].includes(res.status) && 
+            new Date(res.trajet.date_depart) > new Date()
+          ),
+          past: allReservations.filter(res => 
+            ['terminee'].includes(res.status) || 
+            new Date(res.trajet.date_depart) < new Date()
+          ),
+          canceled: allReservations.filter(res => 
+            ['annulee'].includes(res.status)
+          )
+        };
+        
+        setReservations(categorizedReservations);
       } catch (error) {
         console.error("Error fetching reservations:", error);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchReservations();
-  }, []);
+    if (!loadingUser) {
+      fetchReservations();
+    }
+  }, [user, loadingUser]);
 
   const formatDate = (dateTimeString) => {
     return new Date(dateTimeString).toLocaleDateString('en-US', {
@@ -219,36 +82,38 @@ const MyReservations = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  const handleCancelReservation = (reservationId) => {
+  const handleCancelReservation = async (reservationId) => {
     if (window.confirm("Are you sure you want to cancel this reservation? Cancellation policy may apply.")) {
-      // This would be an API call in a real application
-      console.log(`Cancelling reservation ${reservationId}`);
-      
-      // For this demo, we'll just move the reservation to the canceled list
-      const reservation = reservations.upcoming.find(res => res.id === reservationId);
-      if (reservation) {
-        const updatedReservation = {
-          ...reservation,
-          status: "canceled_by_passenger",
-          cancelDate: new Date().toISOString(),
-          refundAmount: Math.round(reservation.price * 0.85 * 100) / 100, // 85% refund for demo
-          refundStatus: "processing"
+      try {
+        await cancelReservation(reservationId);
+        // Refresh the reservations list
+        const response = await getReservationsByUserId(user.id);
+        const allReservations = response.data;
+        
+        const categorizedReservations = {
+          upcoming: allReservations.filter(res => 
+            ['en_attente', 'confirmee'].includes(res.status) && 
+            new Date(res.trajet.date_depart) > new Date()
+          ),
+          past: allReservations.filter(res => 
+            ['terminee'].includes(res.status) || 
+            new Date(res.trajet.date_depart) < new Date()
+          ),
+          canceled: allReservations.filter(res => 
+            ['annulee'].includes(res.status)
+          )
         };
         
-        setReservations({
-          upcoming: reservations.upcoming.filter(res => res.id !== reservationId),
-          past: reservations.past,
-          canceled: [...reservations.canceled, updatedReservation]
-        });
+        setReservations(categorizedReservations);
+      } catch (error) {
+        console.error("Error canceling reservation:", error);
       }
     }
   };
 
   const handleRateRide = (reservationId, rating) => {
-    // This would be an API call in a real application
     console.log(`Rating reservation ${reservationId} with ${rating} stars`);
     
-    // For this demo, we'll just update the reservation
     const updatedPast = reservations.past.map(res => {
       if (res.id === reservationId) {
         return {
@@ -324,6 +189,24 @@ const MyReservations = () => {
     }
   };
 
+  // Show loader while user data is being fetched
+  if (loadingUser) {
+    return <Loader />;
+  }
+
+  // Redirect to login if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Please log in to view your reservations</h1>
+        <Link to="/login">
+          <Button>Go to Login</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Show loader while reservations are being fetched
   if (loading) {
     return <Loader />;
   }
@@ -395,7 +278,7 @@ const MyReservations = () => {
                 : "You don't have any canceled reservations."}
             </p>
             {activeTab === "upcoming" && (
-              <Link to="/search">
+              <Link to="/offer-ride">
                 <Button>Find a Ride</Button>
               </Link>
             )}
