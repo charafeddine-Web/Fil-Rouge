@@ -198,19 +198,30 @@ const Profile = () => {
         console.log(`${pair[0]}: ${pair[1] instanceof Blob ? 'Blob data' : pair[1]}`);
       }
 
+      // Log the current user data
+      console.log('Current user data:', user);
+      console.log('Current profile data:', profile);
+      if (user?.role === 'conducteur') {
+        console.log('Current driver info:', driverInfo);
+      }
+
       // Call the API to update the profile
+      console.log('Sending update request...');
       const response = await updateProfile(formData, token);
       console.log('API Response:', response);
 
       if (response.data) {
+        console.log('Update successful, refreshing data...');
         // Refresh user data
         const userResponse = await getCurrentUser(token);
         const userData = userResponse.data;
+        console.log('Refreshed user data:', userData);
         
         // If user is a driver, refresh driver data
         if (userData.role === 'conducteur') {
           const driverResponse = await getConducteurByUserId(userData.id);
           userData.conducteur = driverResponse.data;
+          console.log('Refreshed driver data:', driverResponse.data);
         }
 
         // Update the profile state with new data
@@ -250,7 +261,8 @@ const Profile = () => {
       console.error("Error details:", {
         status: error.response?.status,
         data: error.response?.data,
-        headers: error.response?.headers
+        headers: error.response?.headers,
+        config: error.config
       });
       const errorMessage = error.response?.data?.message || "Failed to update profile";
       toast.error(errorMessage);

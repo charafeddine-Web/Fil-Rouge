@@ -41,11 +41,26 @@ class ReservationRepository implements ReservationInterface
         return $reservation->delete();
     }
 
-    public function getReservationsByDriverId(int $driverId)
+//    public function getReservationsByUserId(int $userId)
+//    {
+//        return Reservation::with('trajet')
+//            ->where(function ($query) use ($userId) {
+//                $query->where('user_id', $userId)
+//                ->orWhereHas('trajet', function ($subQuery) use ($userId) {
+//                    $subQuery->where('conducteur_id', $userId);
+//                });
+//            })
+//            ->get();
+//    }
+    public function getReservationsByUserId(int $userId)
     {
         return Reservation::with('trajet')
-        ->whereHas('trajet', function ($query) use ($driverId) {
-            $query->where('conducteur_id', $driverId);
-        })->get();
+            ->where('user_id', $userId) // passager
+            ->orWhereHas('trajet', function ($query) use ($userId) {
+                $query->where('conducteur_id', $userId); // conducteur
+            })
+            ->get();
     }
+
+
 }

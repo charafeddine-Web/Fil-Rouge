@@ -67,7 +67,7 @@ function App() {
 
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
           <Route path="/my-rides" element={<MyRides user={user}/>} />
-          <Route path="/offer-ride" element={<SearchRides />} /> 
+          <Route path="/offer-ride" element={<SearchRides  user={user}/>} /> 
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/Messaging" element={<Messaging />} />
           <Route path="/dashboard" element={<DriverDashboard user={user}/>} />

@@ -41,10 +41,7 @@ class ReservationService
     }
     public function getReservationsByDriverId(int $driverId)
     {
-        return $this->reservationRepository->getReservationsByDriverId($driverId);
-//        return Reservation::whereHas('trajet', function ($query) use ($driverId) {
-//            $query->where('conducteur_id', $driverId);
-//        })->get();
+        return $this->reservationRepository->getReservationsByUserId($driverId);
     }
 
 }

@@ -27,15 +27,22 @@ const MyReservations = () => {
         setLoading(true);
         const response = await getReservationsByUserId(user.id);
         const allReservations = response.data;
-        
+        console.log('Raw reservations data:', allReservations);
+        console.log('First reservation structure:', allReservations[0]);
+
+        // Categorize reservations based on status
         const categorizedReservations = {
-          upcoming: allReservations.filter(res => 
-            ['en_attente', 'confirmee'].includes(res.status) && 
-            new Date(res.trajet.date_depart) > new Date()
-          ),
+          upcoming: allReservations.filter(res => {
+            console.log('Processing reservation:', res);
+            console.log('Status:', res.status);
+            console.log('Trajet:', res.trajet);
+            console.log('Trajets:', res.trajets);
+            return ['en_attente', 'confirmee'].includes(res.status) && 
+              new Date(res.trajet?.date_depart || res.trajets?.date_depart) > new Date();
+          }),
           past: allReservations.filter(res => 
             ['terminee'].includes(res.status) || 
-            new Date(res.trajet.date_depart) < new Date()
+            new Date(res.trajet?.date_depart || res.trajets?.date_depart) < new Date()
           ),
           canceled: allReservations.filter(res => 
             ['annulee'].includes(res.status)
@@ -89,7 +96,6 @@ const MyReservations = () => {
         // Refresh the reservations list
         const response = await getReservationsByUserId(user.id);
         const allReservations = response.data;
-        
         const categorizedReservations = {
           upcoming: allReservations.filter(res => 
             ['en_attente', 'confirmee'].includes(res.status) && 
