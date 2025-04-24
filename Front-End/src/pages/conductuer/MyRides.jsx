@@ -1,4 +1,3 @@
-"use client"
 
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
@@ -9,7 +8,9 @@ import Loader from "../../components/Loader"
 import Button from "../../components/Button"
 import { getTrajetsByDriverId } from "../../services/trajets"
 import { getConducteurByUserId } from "../../services/conducteur"
-import { createTrajet } from "../../services/trajets"
+import { createTrajet, cancelTrajet, updateTrajet, en_coursTrajet, termineTrajet } from "../../services/trajets"
+import { toast } from 'react-toastify';
+
 const MyRide = ({ user }) => {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("planifié")
@@ -20,6 +21,8 @@ const MyRide = ({ user }) => {
     annulé: [],
   })
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [currentRide, setCurrentRide] = useState(null)
   const [newRideForm, setNewRideForm] = useState({
     departure: {
       city: "",
@@ -37,7 +40,25 @@ const MyRide = ({ user }) => {
     price: "",
     description: "",
   })
+  const [editRideForm, setEditRideForm] = useState({
+    departure: {
+      city: "",
+      location: "",
+      date: "",
+      time: "",
+    },
+    destination: {
+      city: "",
+      location: "",
+      date: "",
+      time: "",
+    },
+    availableSeats: 3,
+    price: "",
+    description: "",
+  })
   const [conducteurId, setConducteurId] = useState(null) 
+  
   useEffect(() => {
     const fetchDriverRides = async () => {
       try {
@@ -50,7 +71,6 @@ const MyRide = ({ user }) => {
         const conducteurRes = await getConducteurByUserId(user.id)
         const conducteurId = conducteurRes.data.id
         setConducteurId(conducteurId)
-        // console.log('conducteuuuuuuuuuuuuuur',conducteurId)
         const response = await getTrajetsByDriverId(conducteurId)
         console.log("API response:", response)
         // Map backend data structure to frontend structure
@@ -89,6 +109,7 @@ const MyRide = ({ user }) => {
         })
       } catch (error) {
         console.error("Error fetching driver rides:", error)
+        toast.error("Failed to load rides. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -99,6 +120,7 @@ const MyRide = ({ user }) => {
     }
     fetchDriverRides()
   }, [user])
+  
   const formatDate = (dateTimeString) => {
     return new Date(dateTimeString).toLocaleDateString("en-US", {
       weekday: "short",
@@ -107,6 +129,7 @@ const MyRide = ({ user }) => {
       year: "numeric",
     })
   }
+  
   const formatTime = (dateTimeString) => {
     return new Date(dateTimeString).toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -114,6 +137,7 @@ const MyRide = ({ user }) => {
       hour12: true,
     })
   }
+  
   const calculateDuration = (startDateTime, endDateTime) => {
     const start = new Date(startDateTime)
     const end = new Date(endDateTime)
@@ -122,6 +146,7 @@ const MyRide = ({ user }) => {
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60))
     return `${hours}h ${minutes}m`
   }
+  
   const handleInputChange = (e, section, field) => {
     const { value } = e.target
     if (section) {
@@ -139,36 +164,55 @@ const MyRide = ({ user }) => {
       })
     }
   }
+  
+  const handleEditInputChange = (e, section, field) => {
+    const { value } = e.target
+    if (section) {
+      setEditRideForm({
+        ...editRideForm,
+        [section]: {
+          ...editRideForm[section],
+          [field]: value,
+        },
+      })
+    } else {
+      setEditRideForm({
+        ...editRideForm,
+        [field]: value,
+      })
+    }
+  }
+  
   const handleSubmitNewRide = async (e) => {
     e.preventDefault()
     if (!conducteurId) {
       console.error("No conducteur ID available")
-      alert("Unable to create ride: Driver information missing.")
+      toast.error("Unable to create ride: Driver information missing.")
       return
     }
     if (!newRideForm.departure.city || !newRideForm.destination.city) {
       console.error("Departure or destination city is missing")
-      alert("Please fill in both departure and destination cities.")
+      toast.error("Please fill in both departure and destination cities.")
       return
     }
     if (!newRideForm.departure.date || !newRideForm.departure.time) {
       console.error("Departure date or time is missing")
-      alert("Please specify the departure date and time.")
+      toast.error("Please specify the departure date and time.")
       return
     }
     if (!newRideForm.destination.date || !newRideForm.destination.time) {
       console.error("Destination date or time is missing")
-      alert("Please specify the destination date and time.")
+      toast.error("Please specify the destination date and time.")
       return
     }
     if (!newRideForm.availableSeats || isNaN(Number.parseInt(newRideForm.availableSeats))) {
       console.error("Invalid number of seats")
-      alert("Please specify a valid number of seats.")
+      toast.error("Please specify a valid number of seats.")
       return
     }
     if (!newRideForm.price || isNaN(Number.parseFloat(newRideForm.price))) {
       console.error("Invalid price")
-      alert("Please specify a valid price.")
+      toast.error("Please specify a valid price.")
       return
     }
     // Prepare data for backend format
@@ -235,23 +279,260 @@ const MyRide = ({ user }) => {
         price: "",
         description: "",
       })
+      toast.success("Ride created successfully!")
     } catch (error) {
       console.error("Error creating trajet:", error.response?.data)
+      toast.error("Failed to create ride. Please try again.")
     }
   }
-
-  const handleCancelRide = (rideId) => {
-    if (window.confirm("Are you sure you want to cancel this ride? Any passengers will be notified and refunded.")) {
-      setRides({
-        ...rides,
-        active: rides.active.filter((ride) => ride.id !== rideId),
-      })
+  
+  const handleCancelRide = async (rideId) => {
+    try {
+      const confirm = window.confirm(
+        "Are you sure you want to cancel this ride? Any passengers will be notified and refunded."
+      );
+  
+      if (!confirm) return;
+  
+      const response = await cancelTrajet(rideId);
+      const canceledRide = response.trajet || response;
+  
+      toast.success("Ride canceled successfully!");
+  
+      // Find which section contains the canceled ride
+      let foundInKey = null;
+      let rideToMove = null;
+  
+      for (const key of Object.keys(rides)) {
+        const foundRide = rides[key].find((ride) => ride.id === rideId);
+        if (foundRide) {
+          foundInKey = key;
+          rideToMove = foundRide;
+          break;
+        }
+      }
+  
+      if (!foundInKey || !rideToMove) return;
+      rideToMove.status = "annulé";
+  
+      setRides((prevRides) => ({
+        ...prevRides,
+        [foundInKey]: prevRides[foundInKey].filter((ride) => ride.id !== rideId),
+        annulé: [...prevRides.annulé, rideToMove],
+      }));
+  
+    } catch (error) {
+      console.error("Cancellation error:", error);
+      toast.error("Failed to cancel the ride. Please try again.");
     }
-  }
+  };
 
+  // New function to handle starting a ride (change status to en_cours)
+  const handleStartRide = async (rideId) => {
+    try {
+      const response = await en_coursTrajet(rideId);
+      
+      // Find which section contains the ride
+      let foundInKey = null;
+      let rideToMove = null;
+  
+      for (const key of Object.keys(rides)) {
+        const foundRide = rides[key].find((ride) => ride.id === rideId);
+        if (foundRide) {
+          foundInKey = key;
+          rideToMove = foundRide;
+          break;
+        }
+      }
+  
+      if (!foundInKey || !rideToMove) return;
+      rideToMove.status = "en_cours";
+  
+      setRides((prevRides) => ({
+        ...prevRides,
+        [foundInKey]: prevRides[foundInKey].filter((ride) => ride.id !== rideId),
+        en_cours: [...prevRides.en_cours, rideToMove],
+      }));
+      
+      toast.success("Ride started successfully!");
+    } catch (error) {
+      console.error("Error starting ride:", error);
+      toast.error("Failed to start the ride. Please try again.");
+    }
+  };
+  
+  // New function to handle completing a ride (change status to terminé)
+  const handleCompleteRide = async (rideId) => {
+    try {
+      const response = await termineTrajet(rideId);
+      
+      // Find which section contains the ride
+      let foundInKey = null;
+      let rideToMove = null;
+  
+      for (const key of Object.keys(rides)) {
+        const foundRide = rides[key].find((ride) => ride.id === rideId);
+        if (foundRide) {
+          foundInKey = key;
+          rideToMove = foundRide;
+          break;
+        }
+      }
+  
+      if (!foundInKey || !rideToMove) return;
+      rideToMove.status = "terminé";
+  
+      setRides((prevRides) => ({
+        ...prevRides,
+        [foundInKey]: prevRides[foundInKey].filter((ride) => ride.id !== rideId),
+        terminé: [...prevRides.terminé, rideToMove],
+      }));
+      
+      toast.success("Ride completed successfully!");
+    } catch (error) {
+      console.error("Error completing ride:", error);
+      toast.error("Failed to complete the ride. Please try again.");
+    }
+  };
+  
+  const handleOpenEditModal = (ride) => {
+    // Extract date and time from datetime strings
+    const departureDate = new Date(ride.departure.datetime);
+    const destinationDate = new Date(ride.destination.datetime);
+    
+    // Format dates for input fields
+    const formatInputDate = (date) => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    // Format times for input fields
+    const formatInputTime = (date) => {
+      return date.toTimeString().substring(0, 5);
+    };
+    
+    setEditRideForm({
+      departure: {
+        city: ride.departure.city,
+        location: ride.departure.location,
+        date: formatInputDate(departureDate),
+        time: formatInputTime(departureDate),
+      },
+      destination: {
+        city: ride.destination.city,
+        location: ride.destination.location,
+        date: formatInputDate(destinationDate),
+        time: formatInputTime(destinationDate),
+      },
+      availableSeats: ride.availableSeats,
+      price: ride.price,
+      description: ride.description,
+    });
+    
+    setCurrentRide(ride);
+    setShowEditModal(true);
+  };
+  
+  const handleSubmitEditRide = async (e) => {
+    e.preventDefault();
+    if (!currentRide || !currentRide.id) {
+      toast.error("Unable to update: Ride information missing.");
+      return;
+    }
+    
+    // Validation checks
+    if (!editRideForm.departure.city || !editRideForm.destination.city) {
+      toast.error("Please fill in both departure and destination cities.");
+      return;
+    }
+    if (!editRideForm.departure.date || !editRideForm.departure.time) {
+      toast.error("Please specify the departure date and time.");
+      return;
+    }
+    if (!editRideForm.destination.date || !editRideForm.destination.time) {
+      toast.error("Please specify the destination date and time.");
+      return;
+    }
+    if (!editRideForm.availableSeats || isNaN(Number.parseInt(editRideForm.availableSeats))) {
+      toast.error("Please specify a valid number of seats.");
+      return;
+    }
+    if (!editRideForm.price || isNaN(Number.parseFloat(editRideForm.price))) {
+      toast.error("Please specify a valid price.");
+      return;
+    }
+    
+    // Prepare data for backend format
+    const rideData = {
+      conducteur_id: conducteurId,
+      lieu_depart: editRideForm.departure.city,
+      lieu_arrivee: editRideForm.destination.city,
+      date_depart: new Date(`${editRideForm.departure.date}T${editRideForm.departure.time}`).toISOString(),
+      date_arrivee_prevue: new Date(`${editRideForm.destination.date}T${editRideForm.destination.time}`).toISOString(),
+      nombre_places: Number.parseInt(editRideForm.availableSeats),
+      prix_par_place: Number.parseFloat(editRideForm.price),
+      description: editRideForm.description,
+      options: JSON.stringify({
+        lieu_depart_details: editRideForm.departure.location,
+        lieu_arrivee_details: editRideForm.destination.location,
+      }),
+      statut: currentRide.status,
+    };
+    
+    try {
+      const response = await updateTrajet(currentRide.id, rideData);
+      console.log("Trajet updated:", response.data);
+      
+      // Update the ride in the state
+      const updatedRide = {
+        ...currentRide,
+        departure: {
+          city: editRideForm.departure.city,
+          location: editRideForm.departure.location,
+          datetime: new Date(`${editRideForm.departure.date}T${editRideForm.departure.time}`).toISOString(),
+        },
+        destination: {
+          city: editRideForm.destination.city,
+          location: editRideForm.destination.location,
+          datetime: new Date(`${editRideForm.destination.date}T${editRideForm.destination.time}`).toISOString(),
+        },
+        availableSeats: Number.parseInt(editRideForm.availableSeats),
+        totalSeats: Number.parseInt(editRideForm.availableSeats),
+        price: Number.parseFloat(editRideForm.price),
+        estimatedEarnings: Number.parseFloat(editRideForm.price) * Number.parseInt(editRideForm.availableSeats),
+        description: editRideForm.description,
+      };
+      
+      // Find which section contains the ride
+      let foundInKey = null;
+      
+      for (const key of Object.keys(rides)) {
+        if (rides[key].some((ride) => ride.id === currentRide.id)) {
+          foundInKey = key;
+          break;
+        }
+      }
+      
+      if (foundInKey) {
+        setRides((prevRides) => ({
+          ...prevRides,
+          [foundInKey]: prevRides[foundInKey].map((ride) => 
+            ride.id === currentRide.id ? updatedRide : ride
+          ),
+        }));
+      }
+      
+      setShowEditModal(false);
+      setCurrentRide(null);
+      toast.success("Ride updated successfully!");
+    } catch (error) {
+      console.error("Error updating trajet:", error.response?.data);
+      toast.error("Failed to update ride. Please try again.");
+    }
+  };
+  
   const handleRatePassenger = (rideId, passengerId, rating) => {
     // Update the passenger's rating in the completed rides
-    const updatedCompleted = rides.completed.map((ride) => {
+    const updatedCompleted = rides.terminé.map((ride) => {
       if (ride.id === rideId) {
         const updatedPassengers = ride.passengers.map((passenger) => {
           if (passenger.id === passengerId) {
@@ -272,9 +553,11 @@ const MyRide = ({ user }) => {
     })
     setRides({
       ...rides,
-      completed: updatedCompleted,
+      terminé: updatedCompleted,
     })
+    toast.success("Passenger rated successfully!");
   }
+  
   const getStatusBadge = (status) => {
     switch (status) {
       case "planifié":
@@ -291,9 +574,11 @@ const MyRide = ({ user }) => {
         return null
     }
   }
+  
   if (loading) {
     return <Loader />
   }
+  
   return (
     <>
       <div className="min-h-screen flex flex-col bg-gray-50">
@@ -368,9 +653,7 @@ const MyRide = ({ user }) => {
                     ? "No rides in progress"
                     : activeTab === "terminé"
                     ? "No completed rides"
-                    : activeTab === "annulé"
-                    ? "No canceled rides"
-                    :'walo'
+                    : "No canceled rides"
                   }
                   </h2>
                 <p className="text-gray-600 mb-6">
@@ -469,326 +752,579 @@ const MyRide = ({ user }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 mb-4">
-                      <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span>Duration: {calculateDuration(ride.departure.datetime, ride.destination.datetime)}</span>
+                    {/* Trip Info */}
+                    <div className="flex flex-wrap gap-4 text-sm mb-4">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-gray-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="text-gray-700">
+                          {calculateDuration(ride.departure.datetime, ride.destination.datetime)}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-gray-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                        <span className="text-gray-700">
+                          {ride.availableSeats} seats available
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-gray-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="text-gray-700">
+                          ${ride.price} per seat
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                      <p className="text-gray-700">{ride.description}</p>
-                    </div>
-                    {ride.status === "completed" && ride.driverRating && (
-                      <div className="flex items-center mb-4">
-                        <p className="text-sm font-medium text-gray-700 mr-2">Your rating for this ride:</p>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <svg
-                              key={star}
-                              className={`w-4 h-4 ${star <= ride.driverRating ? "text-yellow-400" : "text-gray-300"}`}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                            </svg>
-                          ))}
-                          <span className="ml-1 text-xs text-gray-600">({ride.driverRating})</span>
-                        </div>
+                    {/* Description */}
+                    {ride.description && (
+                      <div className="mt-4">
+                        <h3 className="text-sm font-medium text-gray-700 mb-1">Description</h3>
+                        <p className="text-gray-600 text-sm">{ride.description}</p>
                       </div>
                     )}
                   </div>
-                  {/* Right Column - Passengers & Actions */}
-                  <div className="border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                    <div className="mb-4">
-                      <p className="font-medium text-gray-700 mb-1">Price per Passenger</p>
-                      <p className="text-2xl font-bold text-green-600">${ride.price}</p>
+                  {/* Right Column - Actions */}
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Ride Status</h3>
+                      <div className="flex items-center justify-between gap-2">
+                        {/* Status Update Icons */}
+                        {activeTab === "planifié" && (
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-green-200 transition-colors"
+                              onClick={() => handleStartRide(ride.id)}
+                              title="Start Ride"
+                            >
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div 
+                              className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-200 transition-colors"
+                              onClick={() => handleCancelRide(ride.id)}
+                              title="Cancel Ride"
+                            >
+                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                            <div 
+                              className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors"
+                              onClick={() => handleOpenEditModal(ride)}
+                              title="Edit Ride"
+                            >
+                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                        {activeTab === "en_cours" && (
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-200 transition-colors"
+                              onClick={() => handleCompleteRide(ride.id)}
+                              title="Complete Ride"
+                            >
+                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div 
+                              className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-200 transition-colors"
+                              onClick={() => handleCancelRide(ride.id)}
+                              title="Cancel Ride"
+                            >
+                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {ride.status === "completed" ? (
-                      <div className="mb-4">
-                        <p className="font-medium text-gray-700 mb-1">Total Earnings</p>
-                        <p className="text-2xl font-bold text-green-600">${ride.earnings}</p>
-                      </div>
-                    ) : (
-                      <div className="mb-4">
-                        <p className="font-medium text-gray-700 mb-1">Potential Earnings</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          ${ride.estimatedEarnings || ride.price * ride.totalSeats}
-                        </p>
-                      </div>
-                    )}
-                    <div className="mb-4">
-                      <p className="font-medium text-gray-700 mb-1">
-                        {ride.status === "draft" ? "Planned Seats" : "Seats"}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Earnings</h3>
+                      <p className="text-xl font-semibold text-gray-900">
+                        ${(ride.bookedSeats * ride.price).toFixed(2)} 
+                        <span className="text-sm text-gray-500 font-normal ml-1">
+                          / ${ride.estimatedEarnings}
+                        </span>
                       </p>
-                      <div className="flex items-center space-x-2">
-                        <div className="bg-gray-100 rounded-lg px-3 py-1">
-                          <span className="text-gray-800 font-medium">{ride.bookedSeats}</span>
-                          <span className="text-gray-500 text-sm"> booked</span>
-                        </div>
-                        <div className="bg-gray-100 rounded-lg px-3 py-1">
-                          <span className="text-gray-800 font-medium">{ride.availableSeats}</span>
-                          <span className="text-gray-500 text-sm"> available</span>
-                        </div>
-                      </div>
+                      <p className="text-xs text-gray-500">
+                        {ride.bookedSeats} of {ride.totalSeats} seats booked
+                      </p>
                     </div>
-                    {/* Passengers Section */}
-                    {ride.passengers.length > 0 && (
-                      <div className="mb-4">
-                        <p className="font-medium text-gray-700 mb-2">Passengers</p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Passengers</h3>
+                      {ride.passengers && ride.passengers.length > 0 ? (
                         <div className="space-y-3">
                           {ride.passengers.map((passenger) => (
                             <div key={passenger.id} className="flex items-center justify-between">
                               <div className="flex items-center">
-                                <img
-                                  src={passenger.image || "/placeholder.svg"}
-                                  alt={passenger.name}
-                                  className="w-8 h-8 rounded-full object-cover mr-2"
-                                />
-                                <div>
-                                  <p className="text-sm font-medium text-gray-800">{passenger.name}</p>
-                                  <div className="flex items-center">
-                                    <svg className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                <div className="w-8 h-8 bg-gray-200 rounded-full mr-2 overflow-hidden">
+                                  {passenger.profileImage ? (
+                                    <img
+                                      src={passenger.profileImage}
+                                      alt={passenger.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                                     </svg>
-                                    <span className="ml-1 text-xs text-gray-600">{passenger.rating}</span>
-                                  </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700">{passenger.name}</p>
+                                  <p className="text-xs text-gray-500">{passenger.seats} seat(s)</p>
                                 </div>
                               </div>
-                              {ride.status === "completed" && !passenger.rated && (
+                              {ride.status === "terminé" && !passenger.rated && (
                                 <div className="flex space-x-1">
                                   {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
+                                    <svg
                                       key={star}
+                                      className="w-5 h-5 text-gray-300 cursor-pointer hover:text-yellow-400"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
                                       onClick={() => handleRatePassenger(ride.id, passenger.id, star)}
-                                      className="text-gray-300 hover:text-yellow-400 focus:outline-none transition-colors"
                                     >
-                                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                      </svg>
-                                    </button>
+                                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                    </svg>
                                   ))}
                                 </div>
                               )}
-                              {ride.status === "completed" && passenger.rated && (
-                                <div className="flex items-center">
-                                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                  </svg>
-                                  <span className="ml-1 text-xs text-gray-600">{passenger.yourRating}</span>
+                              {ride.status === "terminé" && passenger.rated && (
+                                <div className="flex space-x-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg
+                                      key={star}
+                                      className={`w-5 h-5 ${
+                                        star <= passenger.yourRating ? "text-yellow-400" : "text-gray-300"
+                                      }`}
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                    </svg>
+                                  ))}
                                 </div>
                               )}
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                    {ride.passengers.length === 0 && <p className="text-sm text-gray-500">No passengers yet</p>}
+                      ) : (
+                        <p className="text-sm text-gray-500">No passengers yet</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                {/* Ride Actions */}
-                <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                  {ride.status === "planifié" && (
-                    <>
-                      <Button variant="secondary" onClick={() => handleCancelRide(ride.id)}>
-                        Cancel Ride
-                      </Button>
-                      <Button variant="secondary" as={Link} to={`/edit-ride/${ride.id}`}>
-                        Edit Ride
-                      </Button>
-                      <Button as={Link} to={`/ride/${ride.id}`}>
-                        View Details
-                      </Button>
-                    </>
-                  )}
-                  {ride.status === "en_cours" && (
-                    <Button as={Link} to={`/ride/${ride.id}`}>
-                      View Details
-                    </Button>
-                  )}
-                  {ride.status === "terminé" && (
-                    <Button as={Link} to={`/ride/${ride.id}`}>
-                      View Details
-                    </Button>
-                  )}
-                  {ride.status === "annulé" && (
-                    <Button as={Link} to={`/ride/${ride.id}`}>
-                      View Details
-                    </Button>
-                  )}
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
-        {/* Add New Ride Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Offer a New Ride</h2>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-gray-700">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <form onSubmit={handleSubmitNewRide}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  {/* Departure Fields */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Departure</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">City</label>
-                        <input
-                          type="text"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.departure.city}
-                          onChange={(e) => handleInputChange(e, "departure", "city")}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Location</label>
-                        <input
-                          type="text"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.departure.location}
-                          onChange={(e) => handleInputChange(e, "departure", "location")}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Date</label>
-                        <input
-                          type="date"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.departure.date}
-                          onChange={(e) => handleInputChange(e, "departure", "date")}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Time</label>
-                        <input
-                          type="time"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.departure.time}
-                          onChange={(e) => handleInputChange(e, "departure", "time")}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  {/* Destination Fields */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Destination</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">City</label>
-                        <input
-                          type="text"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.destination.city}
-                          onChange={(e) => handleInputChange(e, "destination", "city")}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Location</label>
-                        <input
-                          type="text"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.destination.location}
-                          onChange={(e) => handleInputChange(e, "destination", "location")}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Date</label>
-                        <input
-                          type="date"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.destination.date}
-                          onChange={(e) => handleInputChange(e, "destination", "date")}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Time</label>
-                        <input
-                          type="time"
-                          className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                          value={newRideForm.destination.time}
-                          onChange={(e) => handleInputChange(e, "destination", "time")}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Other Fields */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Available Seats</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="8"
-                      className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                      value={newRideForm.availableSeats}
-                      onChange={(e) => handleInputChange(e, null, "availableSeats")}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Price per Passenger ($)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                      value={newRideForm.price}
-                      onChange={(e) => handleInputChange(e, null, "price")}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Description</label>
-                    <textarea
-                      className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                      rows="4"
-                      value={newRideForm.description}
-                      onChange={(e) => handleInputChange(e, null, "description")}
-                      placeholder="Add details about your ride (e.g., stops, amenities, preferences)"
-                    ></textarea>
-                  </div>
-                </div>
-                {/* Modal Actions */}
-                <div className="mt-6 flex justify-end space-x-2">
-                  <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Create Ride</Button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
       </div>
       <Footer />
-    </div >
-    </>
-     )
+    </div>
+    
+    {/* Add New Ride Modal */}
+    {showAddModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Offer a new ride</h2>
+            <button
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => setShowAddModal(false)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <form onSubmit={handleSubmitNewRide}>
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Departure</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">City</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="City"
+                    value={newRideForm.departure.city}
+                    onChange={(e) => handleInputChange(e, "departure", "city")}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Exact location (optional)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="e.g. Airport, Train Station"
+                    value={newRideForm.departure.location}
+                    onChange={(e) => handleInputChange(e, "departure", "location")}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Date</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                      value={newRideForm.departure.date}
+                      onChange={(e) => handleInputChange(e, "departure", "date")}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Time</label>
+                    <input
+                      type="time"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                      value={newRideForm.departure.time}
+                      onChange={(e) => handleInputChange(e, "departure", "time")}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Destination</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">City</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="City"
+                    value={newRideForm.destination.city}
+                    onChange={(e) => handleInputChange(e, "destination", "city")}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Exact location (optional)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="e.g. Airport, City Center"
+                    value={newRideForm.destination.location}
+                    onChange={(e) => handleInputChange(e, "destination", "location")}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Date</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                      value={newRideForm.destination.date}
+                      onChange={(e) => handleInputChange(e, "destination", "date")}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Time</label>
+                    <input
+                      type="time"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                      value={newRideForm.destination.time}
+                      onChange={(e) => handleInputChange(e, "destination", "time")}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Available seats</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="8"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                  value={newRideForm.availableSeats}
+                  onChange={(e) => handleInputChange(e, null, "availableSeats")}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Price per seat ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500"
+                  placeholder="0.00"
+                  value={newRideForm.price}
+                  onChange={(e) => handleInputChange(e, null, "price")}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm text-gray-600 mb-1">Description (optional)</label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 h-20"
+                placeholder="Any details about your ride..."
+                value={newRideForm.description}
+                onChange={(e) => handleInputChange(e, null, "description")}
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 mr-2 hover:bg-gray-50"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 rounded-md text-white hover:bg-green-700"
+              >
+                Create Ride
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+        
+
+       {/* Edit Ride Modal */}
+    {showEditModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-xl shadow-xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Edit Ride</h2>
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmitEditRide}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Departure */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-800">Departure</h3>
+                <div>
+                  <label htmlFor="editDepartureCity" className="block text-sm font-medium text-gray-700 mb-1">
+                    City*
+                  </label>
+                  <input
+                    id="editDepartureCity"
+                    type="text"
+                    value={editRideForm.departure.city}
+                    onChange={(e) => handleEditInputChange(e, "departure", "city")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    placeholder="City name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editDepartureLocation" className="block text-sm font-medium text-gray-700 mb-1">
+                    Specific Location (optional)
+                  </label>
+                  <input
+                    id="editDepartureLocation"
+                    type="text"
+                    value={editRideForm.departure.location}
+                    onChange={(e) => handleEditInputChange(e, "departure", "location")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    placeholder="Meeting point, address, etc."
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editDepartureDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    Date*
+                  </label>
+                  <input
+                    id="editDepartureDate"
+                    type="date"
+                    value={editRideForm.departure.date}
+                    onChange={(e) => handleEditInputChange(e, "departure", "date")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editDepartureTime" className="block text-sm font-medium text-gray-700 mb-1">
+                    Time*
+                  </label>
+                  <input
+                    id="editDepartureTime"
+                    type="time"
+                    value={editRideForm.departure.time}
+                    onChange={(e) => handleEditInputChange(e, "departure", "time")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              {/* Destination */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-800">Destination</h3>
+                <div>
+                  <label htmlFor="editDestinationCity" className="block text-sm font-medium text-gray-700 mb-1">
+                    City*
+                  </label>
+                  <input
+                    id="editDestinationCity"
+                    type="text"
+                    value={editRideForm.destination.city}
+                    onChange={(e) => handleEditInputChange(e, "destination", "city")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    placeholder="City name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editDestinationLocation" className="block text-sm font-medium text-gray-700 mb-1">
+                    Specific Location (optional)
+                  </label>
+                  <input
+                    id="editDestinationLocation"
+                    type="text"
+                    value={editRideForm.destination.location}
+                    onChange={(e) => handleEditInputChange(e, "destination", "location")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    placeholder="Drop-off point, address, etc."
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editDestinationDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    Date*
+                  </label>
+                  <input
+                    id="editDestinationDate"
+                    type="date"
+                    value={editRideForm.destination.date}
+                    onChange={(e) => handleEditInputChange(e, "destination", "date")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editDestinationTime" className="block text-sm font-medium text-gray-700 mb-1">
+                    Time*
+                  </label>
+                  <input
+                    id="editDestinationTime"
+                    type="time"
+                    value={editRideForm.destination.time}
+                    onChange={(e) => handleEditInputChange(e, "destination", "time")}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Ride Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label htmlFor="editAvailableSeats" className="block text-sm font-medium text-gray-700 mb-1">
+                  Available Seats*
+                </label>
+                <input
+                  id="editAvailableSeats"
+                  type="number"
+                  min="1"
+                  max="8"
+                  value={editRideForm.availableSeats}
+                  onChange={(e) => handleEditInputChange(e, null, "availableSeats")}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="editPrice" className="block text-sm font-medium text-gray-700 mb-1">
+                  Price per Seat ($)*
+                </label>
+                <input
+                  id="editPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editRideForm.price}
+                  onChange={(e) => handleEditInputChange(e, null, "price")}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label htmlFor="editDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                Description (optional)
+              </label>
+              <textarea
+                id="editDescription"
+                value={editRideForm.description}
+                onChange={(e) => handleEditInputChange(e, null, "description")}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 h-24"
+                placeholder="Add any additional details about your ride"
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
+    )}
+
+
+
+    
+  </>
+)
 }
-export default MyRide
+
+export default MyRide;

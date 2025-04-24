@@ -6,6 +6,10 @@ export const createTrajet = (data) => api.post('/trajets', data);
 export const updateTrajet = (id, data) => api.put(`/trajets/${id}`, data);
 export const deleteTrajet = (id) => api.delete(`/trajets/${id}`);
 
+export const cancelTrajet = (rideId) => api.patch(`/trajets/${rideId}/cancel`);
+export const en_coursTrajet = (rideId) => api.patch(`/trajets/${rideId}/en_cours`);
+export const termineTrajet = (rideId) => api.patch(`/trajets/${rideId}/termine`);
+
 
 
 // export const searchTrajets = () => api.get('/trajets/recherche');

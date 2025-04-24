@@ -66,6 +66,42 @@ class TrajetController extends Controller
         $this->trajetService->delete($trajet);
         return response()->json(['message' => 'Trajet supprimé avec succès.']);
     }
+    public function cancel($id)
+    {
+        $trajet = $this->trajetService->getById($id);
+
+        if (!$trajet) {
+            return response()->json(['message' => 'Route not found.'], 404);
+        }
+
+        $updated = $this->trajetService->update($id, ['statut' => 'annulé']);
+
+        return response()->json(['message' => 'Trip successfully canceled.', 'trajet' => $updated]);
+    }
+    public function en_cours($id)
+    {
+        $trajet = $this->trajetService->getById($id);
+
+        if (!$trajet) {
+            return response()->json(['message' => 'Route not found.'], 404);
+        }
+
+        $updated = $this->trajetService->update($id, ['statut' => 'en_cours']);
+
+        return response()->json(['message' => 'Trip in progress', 'trajet' => $updated]);
+    }
+    public function termine($id)
+    {
+        $trajet = $this->trajetService->getById($id);
+
+        if (!$trajet) {
+            return response()->json(['message' => 'Route not found.'], 404);
+        }
+
+        $updated = $this->trajetService->update($id, ['statut' => 'terminé']);
+
+        return response()->json(['message' => 'Trip successfully completed.', 'trajet' => $updated]);
+    }
 
 
     public function search(Request $request)

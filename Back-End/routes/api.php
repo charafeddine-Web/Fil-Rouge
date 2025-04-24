@@ -31,4 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conducteur/trajets/{conducteurId}', [TrajetController::class, 'getTrajetsByConducteur']);
     Route::get('/conducteur/user/{id}', [ConducteurController::class, 'getByUserId']);
 
+    Route::patch('/trajets/{id}/cancel', [TrajetController::class, 'cancel']);
+    Route::patch('/trajets/{id}/en_cours', [TrajetController::class, 'en_cours']);
+    Route::patch('/trajets/{id}/termine', [TrajetController::class, 'termine']);
+
 });
