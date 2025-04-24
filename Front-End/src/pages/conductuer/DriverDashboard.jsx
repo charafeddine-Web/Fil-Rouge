@@ -1,15 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import Loader from "../../components/Loader";
 import { getTrajetsByDriverId} from "../../services/trajets";
 import {getConducteurByUserId} from "../../services/conducteur";
+import { getReservationsByDriverId, approveReservation, rejectReservation } from "../../services/reservations";
+import RideItem from './RideItem';
+import ReservationItem from './ReservationItem';
 
-export default function DriverDashboard({user}) {
+const DriverDashboard = ({user}) => {
   const [loading, setLoading] = useState(true);
   const [driverData, setDriverData] = useState(null);
   const [activeSection, setActiveSection] = useState("overview");
+  const [reservations, setReservations] = useState([]);
+  const [reservationLoading, setReservationLoading] = useState(false);
 
   useEffect(() => {
     const fetchDriverData = async () => {
@@ -22,34 +27,90 @@ export default function DriverDashboard({user}) {
         }
         const conducteurRes = await getConducteurByUserId(user.id)
         const conducteurId = conducteurRes.data.id
-
         const response = await getTrajetsByDriverId(conducteurId);
         
-        // Transformer les données de l'API pour correspondre à la structure attendue
+        let reservationsData = [];
+        try {
+          const reservationsRes = await getReservationsByDriverId(conducteurId);
+          reservationsData = reservationsRes.data;
+          console.log('reservationdta ',reservationsData)
+
+        } catch (error) {
+          console.warn("Reservations endpoint not available yet:", error);
+        }
+        
+        // Transform API data to match expected structure
         const transformedData = {
           id: conducteurId,
-          name: response.data.nom || "Conducteur",
-          profileImage: response.data.photoDeProfil || "/api/placeholder/100/100",
-          rating: response.data.note_moyenne || 0,
-          totalRides: response.data.totalRides || 0,
-          earningsThisMonth: response.data.earningsThisMonth || 0,
-          earningsTotal: response.data.earningsTotal || 0,
-          isVerified: response.data.email_verified || false,
-          upcomingRides: response.data.upcomingRides || [],
-          completedRides: response.data.completedRides || [],
-          vehicle: response.data.vehicle || {
-            model: "",
-            year: "",
-            color: "",
-            licensePlate: "",
-            seats: 0
+          name: `${user.prenom} ${user.nom}`,
+          profileImage: conducteurRes.data.photoDeProfil || "/api/placeholder/100/100",
+          rating: parseFloat(conducteurRes.data.note_moyenne) || 0,
+          totalRides: response.data.length || 0,
+          earningsThisMonth: response.data.reduce((sum, ride) => 
+            ride.statut === 'terminé' ? sum + parseFloat(ride.prix_par_place) : sum, 0),
+          earningsTotal: response.data.reduce((sum, ride) => 
+            ride.statut === 'terminé' ? sum + parseFloat(ride.prix_par_place) : sum, 0),
+          isVerified: conducteurRes.data.status === 'active',
+          upcomingRides: response.data
+            .filter(ride => ride.statut === 'planifié' || ride.statut === 'en_cours')
+            .map(ride => ({
+              id: ride.id,
+              departure: {
+                city: ride.lieu_depart,
+                location: ride.lieu_depart,
+                datetime: ride.date_depart
+              },
+              destination: {
+                city: ride.lieu_arrivee,
+                location: ride.lieu_arrivee
+              },
+              price: parseFloat(ride.prix_par_place),
+              passengers: ride.nombre_places,
+              status: ride.statut,
+              description: ride.description,
+              bagagesAutorises: ride.bagages_autorises,
+              animauxAutorises: ride.animaux_autorises,
+              fumeurAutorise: ride.fumeur_autorise,
+              options: ride.options
+            })),
+          completedRides: response.data
+            .filter(ride => ride.statut === 'terminé')
+            .map(ride => ({
+              id: ride.id,
+              departure: {
+                city: ride.lieu_depart,
+                location: ride.lieu_depart,
+                datetime: ride.date_depart
+              },
+              destination: {
+                city: ride.lieu_arrivee,
+                location: ride.lieu_arrivee
+              },
+              price: parseFloat(ride.prix_par_place),
+              passengers: ride.nombre_places,
+              status: ride.statut,
+              description: ride.description,
+              bagagesAutorises: ride.bagages_autorises,
+              animauxAutorises: ride.animaux_autorises,
+              fumeurAutorise: ride.fumeur_autorise,
+              options: ride.options
+            })),
+          driverInfo: {
+            numPermis: conducteurRes.data.num_permis || '',
+            disponibilite: conducteurRes.data.disponibilite || false,
+            adresse: conducteurRes.data.adresse || '',
+            ville: conducteurRes.data.ville || '',
+            dateNaissance: conducteurRes.data.date_naissance || '',
+            sexe: conducteurRes.data.sexe || '',
+            photoPermis: conducteurRes.data.photo_permis || '',
+            photoIdentite: conducteurRes.data.photo_identite || ''
           }
         };
 
         setDriverData(transformedData);
+        setReservations(reservationsData);
       } catch (error) {
-        console.error("Erreur lors de la récupération des données du conducteur:", error);
-        // Gérer l'erreur (afficher un message d'erreur, etc.)
+        console.error("Error fetching driver data:", error);
       } finally {
         setLoading(false);
       }
@@ -57,6 +118,92 @@ export default function DriverDashboard({user}) {
 
     fetchDriverData();
   }, []);
+
+  const handleApproveReservation = async (reservationId) => {
+    try {
+      setReservationLoading(true);
+      await approveReservation(reservationId);
+      // Refresh all data after approval
+      const conducteurRes = await getConducteurByUserId(user.id);
+      const conducteurId = conducteurRes.data.id;
+      const response = await getTrajetsByDriverId(conducteurId);
+      const reservationsRes = await getReservationsByDriverId(conducteurId);
+      
+      setDriverData(prevData => ({
+        ...prevData,
+        upcomingRides: response.data
+          .filter(ride => ride.statut === 'planifié' || ride.statut === 'en_cours')
+          .map(ride => ({
+            id: ride.id,
+            departure: {
+              city: ride.lieu_depart,
+              location: ride.lieu_depart,
+              datetime: ride.date_depart
+            },
+            destination: {
+              city: ride.lieu_arrivee,
+              location: ride.lieu_arrivee
+            },
+            price: parseFloat(ride.prix_par_place),
+            passengers: ride.nombre_places,
+            status: ride.statut,
+            description: ride.description,
+            bagagesAutorises: ride.bagages_autorises,
+            animauxAutorises: ride.animaux_autorises,
+            fumeurAutorise: ride.fumeur_autorise,
+            options: ride.options
+          }))
+      }));
+      setReservations(reservationsRes.data);
+    } catch (error) {
+      console.error("Error approving reservation:", error);
+    } finally {
+      setReservationLoading(false);
+    }
+  };
+
+  const handleRejectReservation = async (reservationId) => {
+    try {
+      setReservationLoading(true);
+      await rejectReservation(reservationId);
+      // Refresh all data after rejection
+      const conducteurRes = await getConducteurByUserId(user.id);
+      const conducteurId = conducteurRes.data.id;
+      const response = await getTrajetsByDriverId(conducteurId);
+      const reservationsRes = await getReservationsByDriverId(conducteurId);
+      
+      setDriverData(prevData => ({
+        ...prevData,
+        upcomingRides: response.data
+          .filter(ride => ride.statut === 'planifié' || ride.statut === 'en_cours')
+          .map(ride => ({
+            id: ride.id,
+            departure: {
+              city: ride.lieu_depart,
+              location: ride.lieu_depart,
+              datetime: ride.date_depart
+            },
+            destination: {
+              city: ride.lieu_arrivee,
+              location: ride.lieu_arrivee
+            },
+            price: parseFloat(ride.prix_par_place),
+            passengers: ride.nombre_places,
+            status: ride.statut,
+            description: ride.description,
+            bagagesAutorises: ride.bagages_autorises,
+            animauxAutorises: ride.animaux_autorises,
+            fumeurAutorise: ride.fumeur_autorise,
+            options: ride.options
+          }))
+      }));
+      setReservations(reservationsRes.data);
+    } catch (error) {
+      console.error("Error rejecting reservation:", error);
+    } finally {
+      setReservationLoading(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -85,19 +232,16 @@ export default function DriverDashboard({user}) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <Header/>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Dashboard Header */}
           <div className="md:flex md:items-center md:justify-between mb-6">
-            <div className="flex-1 min-w-0">
+            {/* <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
               Driver's dashboard
               </h2>
-            </div>
-            
+            </div> */}
           </div>
 
         {/* Tab Navigation */}
@@ -111,7 +255,7 @@ export default function DriverDashboard({user}) {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
-              Vue d'ensemble
+              Overview
             </button>
             <button
               onClick={() => setActiveSection("upcoming")}
@@ -121,7 +265,7 @@ export default function DriverDashboard({user}) {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
-              Trajets à venir
+              Upcoming Rides
             </button>
             <button
               onClick={() => setActiveSection("history")}
@@ -131,23 +275,23 @@ export default function DriverDashboard({user}) {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
-              Historique
+              History
             </button>
             <button
-              onClick={() => setActiveSection("vehicle")}
+              onClick={() => setActiveSection("reservations")}
               className={`${
-                activeSection === "vehicle"
+                activeSection === "reservations"
                   ? "border-green-500 text-green-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
-              Véhicule
+              Reservations
             </button>
           </nav>
         </div>
 
         {/* Dashboard Content */}
-        {activeSection === "overview" && (
+        {activeSection === "overview" && driverData && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Stats Cards */}
             <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -165,7 +309,7 @@ export default function DriverDashboard({user}) {
                       </dt>
                       <dd className="flex items-baseline">
                         <div className="text-2xl font-semibold text-gray-900">
-                          {driverData.upcomingRides.length}
+                          {driverData.upcomingRides?.length || 0}
                         </div>
                       </dd>
                     </dl>
@@ -272,6 +416,11 @@ export default function DriverDashboard({user}) {
                         </span>
                       )}
                     </p>
+                    <div className="mt-2 text-sm text-gray-500">
+                      <p>Numéro de permis: {driverData.driverInfo.numPermis}</p>
+                      <p>Ville: {driverData.driverInfo.ville}</p>
+                      <p>Disponibilité: {driverData.driverInfo.disponibilite ? 'Disponible' : 'Non disponible'}</p>
+                    </div>
                     <Link to="/profile">
                       <button className="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Modifier le profil
@@ -327,13 +476,6 @@ export default function DriverDashboard({user}) {
                         {driverData.upcomingRides[0].passengers} passagers
                       </div>
                     </div>
-                    <div className="mt-4">
-                      <Link to={`/rides/${driverData.upcomingRides[0].id}`}>
-                        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                          Voir les détails
-                        </button>
-                      </Link>
-                    </div>
                   </div>
                 ) : (
                   <div className="mt-5 text-center py-6">
@@ -382,16 +524,34 @@ export default function DriverDashboard({user}) {
                           </div>
                           <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                             <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                             </svg>
-                            <span>{ride.departure.location}</span>
+                            <span>{ride.passengers} places disponibles</span>
                           </div>
                           <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                             <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                             </svg>
-                            <span>{ride.passengers} passagers</span>
+                            <span>{ride.price.toFixed(2)}€ par place</span>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center text-sm sm:mt-0">
+                          <div className="flex space-x-2">
+                            {ride.bagagesAutorises && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Bagages
+                              </span>
+                            )}
+                            {ride.animauxAutorises && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Animaux
+                              </span>
+                            )}
+                            {ride.fumeurAutorise && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Fumeur
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="mt-2 flex items-center text-sm sm:mt-0">
@@ -437,80 +597,89 @@ export default function DriverDashboard({user}) {
         )}
 
         {activeSection === "history" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul className="divide-y divide-gray-200">
-              {driverData.completedRides.length > 0 ? (
-                driverData.completedRides.map((ride) => (
-                  <li key={ride.id}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <p className="text-lg font-medium text-gray-900 truncate">
-                            {ride.departure.city} → {ride.destination.city}
-                          </p>
-                          <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {ride.status}
-                          </span>
-                        </div>
-                        <div className="text-lg font-medium text-gray-900">
-                          {ride.price.toFixed(2)} €
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex sm:space-x-6">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span>{formatDateTime(ride.departure.datetime)}</span>
-                          </div>
-                          <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <svg
-                                  key={i}
-                                  className={`h-5 w-5 ${i < ride.rating ? "text-yellow-400" : "text-gray-300"}`}
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M10 15.585l-7.07 3.714 1.351-7.888L.36 7.13l7.891-1.146L10 0l1.75 5.984 7.891 1.146-3.923 3.823 1.351 7.888z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <span>{ride.passengers} passagers</span>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm sm:mt-0">
-                          <Link to={`/rides/${ride.id}`} className="text-green-600 hover:text-green-900">
-                            Voir les détails
-                            <svg className="ml-1 h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
+          <div className="space-y-6">
+            {/* Completed Rides */}
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Completed Rides
+                </h3>
+              </div>
+              <ul className="divide-y divide-gray-200">
+                {driverData.completedRides.length > 0 ? (
+                  driverData.completedRides.map((ride) => (
+                    <RideItem key={ride.id} ride={ride} formatDateTime={formatDateTime} />
+                  ))
+                ) : (
+                  <li className="px-4 py-12 text-center">
+                    <p className="text-sm text-gray-500">No completed rides</p>
                   </li>
-                ))
+                )}
+              </ul>
+            </div>
+
+            {/* Completed Reservations */}
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Completed Reservations
+                </h3>
+              </div>
+              <ul className="divide-y divide-gray-200">
+                {reservations.filter(res => res.status === 'confirmee' || res.status === 'annulee').length > 0 ? (
+                  reservations
+                    .filter(res => res.status === 'confirmee' || res.status === 'annulee')
+                    .map((reservation) => (
+                      <ReservationItem
+                        formatDateTime={formatDateTime}
+                        key={reservation.id}
+                        reservation={reservation}
+                        onApprove={handleApproveReservation}
+                        onReject={handleRejectReservation}
+                        loading={reservationLoading}
+                      />
+                    ))
+                ) : (
+                  <li className="px-4 py-12 text-center">
+                    <p className="text-sm text-gray-500">No completed reservations</p>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "reservations" && (
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                Pending Reservations
+              </h3>
+            </div>
+            <ul className="divide-y divide-gray-200">
+              {reservations.filter(res => res.status === 'en_attente').length > 0 ? (
+                reservations
+                  .filter(res => res.status === 'en_attente')
+                  .map((reservation) => (
+                    <ReservationItem
+                     formatDateTime={formatDateTime}
+                      key={reservation.id}
+                      reservation={reservation}
+                      onApprove={handleApproveReservation}
+                      onReject={handleRejectReservation}
+                      loading={reservationLoading}
+                    />
+                  ))
               ) : (
                 <li className="px-4 py-12 text-center">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    Aucun trajet terminé
+                    No pending reservations
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    Votre historique de trajets apparaîtra ici une fois que vous aurez effectué des voyages.
+                    New reservations will appear here.
                   </p>
                 </li>
               )}
@@ -518,7 +687,7 @@ export default function DriverDashboard({user}) {
           </div>
         )}
 
-        {activeSection === "vehicle" && (
+        {/* {activeSection === "vehicle" && (
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -586,11 +755,12 @@ export default function DriverDashboard({user}) {
               </Link>
             </div>
           </div>
-        )}
+        )} */}
       </main>
 
-      {/* Footer */}
       <Footer/>
     </div>
   );
 }
+
+export default DriverDashboard;

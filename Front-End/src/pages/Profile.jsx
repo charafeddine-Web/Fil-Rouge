@@ -1,14 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Button from "../components/Button";
+import Loader from "../components/Loader";
+import { getCurrentUser, updateProfile } from "../services/auth";
+import { getConducteurByUserId } from "../services/conducteur";
+import { toast } from "react-toastify";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user, setUser } = useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [driverInfo, setDriverInfo] = useState(null);
   
   // User profile state
   const [profile, setProfile] = useState({
@@ -21,15 +28,7 @@ const Profile = () => {
     profileImage: null,
     address: "",
     city: "",
-    country: "",
     preferredLanguage: "english",
-    notifications: {
-      emailNotifications: true,
-      smsNotifications: false,
-      newRideRequests: true,
-      rideUpdates: true,
-      promotions: false
-    },
     verifications: {
       email: true,
       phone: false,
@@ -38,39 +37,69 @@ const Profile = () => {
     }
   });
   
-  // Simulated data loading
+  // Load user data
   useEffect(() => {
-    // In a real app, this would be an API call
-    setTimeout(() => {
-      setProfile({
-        firstName: "Thomas",
-        lastName: "Martin",
-        email: "thomas.martin@example.com",
-        phone: "+33 6 12 34 56 78",
-        birthDate: "1990-05-15",
-        bio: "Passionate about travel and meeting new people. I commute regularly between Paris and Lyon for work.",
-        profileImage: "/api/placeholder/150/150",
-        address: "123 Rue de la Paix",
-        city: "Paris",
-        country: "France",
-        preferredLanguage: "french",
-        notifications: {
-          emailNotifications: true,
-          smsNotifications: true,
-          newRideRequests: true,
-          rideUpdates: true,
-          promotions: false
-        },
-        verifications: {
-          email: true,
-          phone: true,
-          identity: false,
-          drivingLicense: true
+    const loadUserData = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
         }
-      });
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+
+        const response = await getCurrentUser(token);
+        const userData = response.data;
+        
+        // If user is a driver, load additional driver information
+        if (userData.role === 'conducteur') {
+          try {
+            const driverResponse = await getConducteurByUserId(userData.id);
+            const driverData = driverResponse.data;
+            // Merge user data with driver data
+            userData.conducteur = driverData;
+          } catch (error) {
+            console.error("Error loading driver data:", error);
+            toast.error("Failed to load driver information");
+          }
+        }
+        
+        // Set profile data from user response
+        setProfile({
+          firstName: userData.prenom || "",
+          lastName: userData.nom || "",
+          email: userData.email || "",
+          phone: userData.telephone || "",
+          birthDate: userData.date_naissance || "",
+          bio: userData.bio || "",
+          profileImage: userData.photoDeProfil || null,
+          address: userData.conducteur?.adresse || "",
+          city: userData.conducteur?.ville || "",
+          preferredLanguage: userData.langue_preferee || "french",
+      
+          verifications: {
+            email: userData.email_verified || false,
+            phone: userData.telephone_verified || false,
+            identity: !!userData.conducteur?.photo_identite,
+            drivingLicense: !!userData.conducteur?.photo_permis
+          }
+        });
+
+        // Set driver info if user is a driver
+        if (userData.role === 'conducteur' && userData.conducteur) {
+          setDriverInfo(userData.conducteur);
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        toast.error("Failed to load profile data");
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [navigate]);
   
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -93,58 +122,130 @@ const Profile = () => {
   };
   
   const handleImageChange = (e) => {
-    // In a real app, this would handle file uploads
-    setProfile({
-      ...profile,
-      profileImage: URL.createObjectURL(e.target.files[0])
-    });
+    const file = e.target.files[0];
+    if (file) {
+      setProfile({
+        ...profile,
+        profileImage: URL.createObjectURL(file)
+      });
+    }
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Prepare the data for the API
+      const formData = new FormData();
+      
+      // Add basic user information
+      formData.append('prenom', profile.firstName);
+      formData.append('nom', profile.lastName);
+      formData.append('email', profile.email);
+      formData.append('telephone', profile.phone);
+      formData.append('date_naissance', profile.birthDate);
+      formData.append('langue_preferee', profile.preferredLanguage);
+
+      // If user is a driver, add driver-specific information
+      if (user?.role === 'conducteur') {
+        formData.append('adresse', profile.address);
+        formData.append('ville', profile.city);
+      }
+
+      // If there's a new profile image, add it
+      if (profile.profileImage && profile.profileImage.startsWith('blob:')) {
+        const response = await fetch(profile.profileImage);
+        const blob = await response.blob();
+        formData.append('photo_de_profil', blob, 'profile-image.jpg');
+      }
+
+      // Call the API to update the profile
+      await updateProfile(formData, token);
+      
+      // Refresh user data
+      const response = await getCurrentUser(token);
+      const userData = response.data;
+      
+      // If user is a driver, refresh driver data
+      if (userData.role === 'conducteur') {
+        const driverResponse = await getConducteurByUserId(userData.id);
+        userData.conducteur = driverResponse.data;
+      }
+
+      // Update the profile state with new data
+      setProfile({
+        firstName: userData.prenom || "",
+        lastName: userData.nom || "",
+        email: userData.email || "",
+        phone: userData.telephone || "",
+        birthDate: userData.date_naissance || "",
+        bio: userData.bio || "",
+        profileImage: userData.photoDeProfil || null,
+        address: userData.conducteur?.adresse || "",
+        city: userData.conducteur?.ville || "",
+        preferredLanguage: userData.langue_preferee || "french",
+        verifications: {
+          email: userData.email_verified || false,
+          phone: userData.telephone_verified || false,
+          identity: !!userData.conducteur?.photo_identite,
+          drivingLicense: !!userData.conducteur?.photo_permis
+        }
+      });
+
+      // Update driver info if user is a driver
+      if (userData.role === 'conducteur' && userData.conducteur) {
+        setDriverInfo(userData.conducteur);
+      }
+
       setIsEditing(false);
       setSaveSuccess(true);
+      toast.success("Profile updated successfully!");
       
       // Reset success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);
-    }, 1500);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error(error.response?.data?.message || "Failed to update profile");
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="container mx-auto px-4 py-8 flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading profile...</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
+      <Loader/>
     );
   }
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
       <div className="container mx-auto px-4 py-8 flex-grow">
         <div className="max-w-4xl mx-auto">
           {/* Page Title */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">
+                {user?.role === 'conducteur' ? 'Driver Profile' : 'Passenger Profile'}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {user?.role === 'conducteur' ? 'Manage your driver account and preferences' : 'Manage your passenger account and preferences'}
+              </p>
+            </div>
             {!isEditing && (
               <Button 
                 onClick={() => setIsEditing(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
               >
                 Edit Profile
               </Button>
@@ -153,7 +254,7 @@ const Profile = () => {
           
           {/* Success Message */}
           {saveSuccess && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 flex items-center">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
@@ -161,18 +262,18 @@ const Profile = () => {
             </div>
           )}
           
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             {/* Profile Header */}
-            <div className="bg-green-600 px-6 py-4">
+            <div className="bg-gradient-to-r from-green-600 to-green-700 px-8 py-6">
               <div className="flex items-center">
                 <div className="relative">
                   <img 
                     src={profile.profileImage || "/api/placeholder/150/150"} 
                     alt="Profile" 
-                    className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                    className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg"
                   />
                   {isEditing && (
-                    <label className="absolute bottom-0 right-0 bg-white rounded-full p-1 cursor-pointer shadow-md">
+                    <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-md hover:bg-gray-100 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
                       </svg>
@@ -185,29 +286,53 @@ const Profile = () => {
                     </label>
                   )}
                 </div>
-                <div className="ml-6">
+                <div className="ml-8">
                   <h2 className="text-2xl font-bold text-white">{profile.firstName} {profile.lastName}</h2>
-                  <p className="text-green-100">Member since January 2023</p>
+                  <p className="text-green-100 mt-1">Member since {new Date(user?.created_at).toLocaleDateString()}</p>
+                  {user?.role === 'conducteur' && driverInfo && (
+                    <div className="mt-3 flex items-center space-x-4">
+                      <span className="bg-white text-green-600 px-3 py-1 rounded-full text-sm font-medium shadow-sm">
+                        {user.email_verified === true ? 'Verified Driver' : 'Pending Verification'}
+                      </span>
+                      {driverInfo.note_moyenne && (
+                        <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
+                          <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="ml-1 text-white">
+                            {typeof driverInfo.note_moyenne === 'number' 
+                              ? driverInfo.note_moyenne.toFixed(1)
+                              : parseFloat(driverInfo.note_moyenne || 0).toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
             {/* Profile Content */}
             <form onSubmit={handleSubmit}>
-              <div className="p-6">
+              <div className="p-8">
                 {/* Personal Information */}
                 <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Personal Information</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Personal Information
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-gray-700 mb-1">First Name</label>
+                      <label className="block text-gray-700 mb-1 font-medium">First Name</label>
                       {isEditing ? (
                         <input 
                           type="text" 
                           name="firstName" 
                           value={profile.firstName} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                           required 
                         />
                       ) : (
@@ -215,14 +340,14 @@ const Profile = () => {
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-700 mb-1">Last Name</label>
+                      <label className="block text-gray-700 mb-1 font-medium">Last Name</label>
                       {isEditing ? (
                         <input 
                           type="text" 
                           name="lastName" 
                           value={profile.lastName} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                           required 
                         />
                       ) : (
@@ -230,14 +355,14 @@ const Profile = () => {
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-700 mb-1">Email</label>
+                      <label className="block text-gray-700 mb-1 font-medium">Email</label>
                       {isEditing ? (
                         <input 
                           type="email" 
                           name="email" 
                           value={profile.email} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                           required 
                         />
                       ) : (
@@ -245,41 +370,41 @@ const Profile = () => {
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-700 mb-1">Phone Number</label>
+                      <label className="block text-gray-700 mb-1 font-medium">Phone Number</label>
                       {isEditing ? (
                         <input 
                           type="tel" 
                           name="phone" 
                           value={profile.phone} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
                         <p className="text-gray-800">{profile.phone}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-700 mb-1">Date of Birth</label>
+                      <label className="block text-gray-700 mb-1 font-medium">Date of Birth</label>
                       {isEditing ? (
                         <input 
                           type="date" 
                           name="birthDate" 
                           value={profile.birthDate} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
                         <p className="text-gray-800">{new Date(profile.birthDate).toLocaleDateString()}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-700 mb-1">Preferred Language</label>
+                      <label className="block text-gray-700 mb-1 font-medium">Preferred Language</label>
                       {isEditing ? (
                         <select 
                           name="preferredLanguage" 
                           value={profile.preferredLanguage} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
                         >
                           <option value="english">English</option>
                           <option value="french">French</option>
@@ -295,73 +420,103 @@ const Profile = () => {
                 
                 {/* Address */}
                 <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Address</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Address
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                      <label className="block text-gray-700 mb-1">Street Address</label>
+                      <label className="block text-gray-700 mb-1 font-medium">Street Address</label>
                       {isEditing ? (
                         <input 
                           type="text" 
                           name="address" 
                           value={profile.address} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
                         <p className="text-gray-800">{profile.address}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-700 mb-1">City</label>
+                      <label className="block text-gray-700 mb-1 font-medium">City</label>
                       {isEditing ? (
                         <input 
                           type="text" 
                           name="city" 
                           value={profile.city} 
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
                         <p className="text-gray-800">{profile.city}</p>
                       )}
                     </div>
-                    <div>
-                      <label className="block text-gray-700 mb-1">Country</label>
-                      {isEditing ? (
-                        <input 
-                          type="text" 
-                          name="country" 
-                          value={profile.country} 
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
-                        />
-                      ) : (
-                        <p className="text-gray-800">{profile.country}</p>
-                      )}
-                    </div>
+                    
+                
                   </div>
                 </div>
                 
-                {/* Bio */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">About Me</h3>
-                  {isEditing ? (
-                    <textarea 
-                      name="bio" 
-                      value={profile.bio} 
-                      onChange={handleInputChange}
-                      rows="4"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
-                      placeholder="Tell others about yourself..."
-                    ></textarea>
-                  ) : (
-                    <p className="text-gray-800">{profile.bio}</p>
-                  )}
-                </div>
+                {/* Driver-specific Information */}
+                {user?.role === 'conducteur' && driverInfo && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                      </svg>
+                      Driver Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-gray-700 mb-1 font-medium">License Number</label>
+                        <p className="text-gray-800">{driverInfo.num_permis || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 mb-1 font-medium">Gender</label>
+                        <p className="text-gray-800 capitalize">{driverInfo.sexe || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 mb-1 font-medium">Availability</label>
+                        <p className="text-gray-800">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            driverInfo.disponibilite 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {driverInfo.disponibilite ? 'Available' : 'Not Available'}
+                          </span>
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 mb-1 font-medium">Average Rating</label>
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="ml-1 text-gray-800">
+                            {typeof driverInfo.note_moyenne === 'number' 
+                              ? driverInfo.note_moyenne.toFixed(1)
+                              : parseFloat(driverInfo.note_moyenne || 0).toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Verification Status */}
                 <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Verifications</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Verifications
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className={`p-4 rounded-lg border ${profile.verifications.email ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                       <div className="flex items-center">
@@ -399,150 +554,80 @@ const Profile = () => {
                       </p>
                     </div>
                     
-                    <div className={`p-4 rounded-lg border ${profile.verifications.identity ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className="flex items-center">
-                        {profile.verifications.identity ? (
-                          <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-4.707-5.293a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 9.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        <span className="font-medium">ID Verification</span>
-                      </div>
-                      <p className="text-sm mt-1 text-gray-600">
-                        {profile.verifications.identity ? 'Verified' : 'Not verified'}
-                      </p>
-                      {!profile.verifications.identity && (
-                        <Button 
-                          type="button"
-                          className="mt-2 text-sm bg-green-600 hover:bg-green-700 text-white py-1 px-3"
-                          onClick={() => navigate('/verify-identity')}
-                        >
-                          Verify Now
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className={`p-4 rounded-lg border ${profile.verifications.drivingLicense ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className="flex items-center">
-                        {profile.verifications.drivingLicense ? (
-                          <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-4.707-5.293a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 9.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        <span className="font-medium">Driving License</span>
-                      </div>
-                      <p className="text-sm mt-1 text-gray-600">
-                        {profile.verifications.drivingLicense ? 'Verified' : 'Not verified'}
-                      </p>
-                      {!profile.verifications.drivingLicense && (
-                        <Button 
-                          type="button"
-                          className="mt-2 text-sm bg-green-600 hover:bg-green-700 text-white py-1 px-3"
-                          onClick={() => navigate('/verify-license')}
-                        >
-                          Verify Now
-                        </Button>
-                      )}
-                    </div>
+                    {user?.role === 'conducteur' && (
+                      <>
+                        <div className={`p-4 rounded-lg border ${profile.verifications.identity ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                          <div className="flex items-center">
+                            {profile.verifications.identity ? (
+                              <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-4.707-5.293a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 9.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                            <span className="font-medium">ID Verification</span>
+                          </div>
+                          <p className="text-sm mt-1 text-gray-600">
+                            {profile.verifications.identity ? 'Verified' : 'Not verified'}
+                          </p>
+                          {!profile.verifications.identity && (
+                            <Button 
+                              type="button"
+                              className="mt-2 text-sm bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
+                              onClick={() => navigate('/verify-email')}
+                            >
+                              Verify Now
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <div className={`p-4 rounded-lg border ${profile.verifications.drivingLicense ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                          <div className="flex items-center">
+                            {profile.verifications.drivingLicense ? (
+                              <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-4.707-5.293a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 9.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                            <span className="font-medium">Driving License</span>
+                          </div>
+                          <p className="text-sm mt-1 text-gray-600">
+                            {profile.verifications.drivingLicense ? 'Verified' : 'Not verified'}
+                          </p>
+                          {!profile.verifications.drivingLicense && (
+                            <Button 
+                              type="button"
+                              className="mt-2 text-sm bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
+                              onClick={() => navigate('/verify-license')}
+                            >
+                              Verify Now
+                            </Button>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
-                
-                {/* Notification Preferences */}
-                {isEditing && (
-                  <div className="mb-8">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Notification Preferences</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id="notifications.emailNotifications" 
-                          name="notifications.emailNotifications" 
-                          checked={profile.notifications.emailNotifications} 
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" 
-                        />
-                        <label htmlFor="notifications.emailNotifications" className="ml-2 text-gray-700">
-                          Email Notifications
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id="notifications.smsNotifications" 
-                          name="notifications.smsNotifications" 
-                          checked={profile.notifications.smsNotifications} 
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" 
-                        />
-                        <label htmlFor="notifications.smsNotifications" className="ml-2 text-gray-700">
-                          SMS Notifications
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id="notifications.newRideRequests" 
-                          name="notifications.newRideRequests" 
-                          checked={profile.notifications.newRideRequests} 
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" 
-                        />
-                        <label htmlFor="notifications.newRideRequests" className="ml-2 text-gray-700">
-                          New Ride Requests
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id="notifications.rideUpdates" 
-                          name="notifications.rideUpdates" 
-                          checked={profile.notifications.rideUpdates} 
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" 
-                        />
-                        <label htmlFor="notifications.rideUpdates" className="ml-2 text-gray-700">
-                          Ride Updates
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id="notifications.promotions" 
-                          name="notifications.promotions" 
-                          checked={profile.notifications.promotions} 
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" 
-                        />
-                        <label htmlFor="notifications.promotions" className="ml-2 text-gray-700">
-                          Promotions and News
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
               
               {/* Form Actions */}
               {isEditing && (
-                <div className="px-6 py-4 bg-gray-50 border-t flex justify-end space-x-4">
+                <div className="px-8 py-4 bg-gray-50 border-t flex justify-end space-x-4">
                   <Button 
                     type="button" 
                     onClick={() => setIsEditing(false)}
-                    className="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    className="bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
                   >
                     Save Changes
                   </Button>
@@ -556,13 +641,13 @@ const Profile = () => {
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button 
                 onClick={() => navigate('/change-password')}
-                className="block w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 px-4 py-2"
+                className="block w-full bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
               >
                 Change Password
               </Button>
               <Button 
                 onClick={() => navigate('/payment-methods')}
-                className="block w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 px-4 py-2"
+                className="block w-full bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
               >
                 Payment Methods
               </Button>

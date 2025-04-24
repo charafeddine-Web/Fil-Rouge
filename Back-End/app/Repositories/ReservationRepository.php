@@ -40,4 +40,12 @@ class ReservationRepository implements ReservationInterface
         }
         return $reservation->delete();
     }
+
+    public function getReservationsByDriverId(int $driverId)
+    {
+        return Reservation::with('trajet')
+        ->whereHas('trajet', function ($query) use ($driverId) {
+            $query->where('conducteur_id', $driverId);
+        })->get();
+    }
 }

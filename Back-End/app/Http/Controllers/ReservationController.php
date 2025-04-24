@@ -15,9 +15,21 @@ class ReservationController extends Controller
         $this->reservationService = $reservationService;
     }
 
-    public function index(): JsonResponse
+//    public function index(): JsonResponse
+//    {
+//        $reservations = $this->reservationService->getAllReservations();
+//        return response()->json($reservations);
+//    }
+    public function index(Request $request): JsonResponse
     {
-        $reservations = $this->reservationService->getAllReservations();
+        $driverId = $request->query('conducteur_id');
+
+        if ($driverId) {
+            $reservations = $this->reservationService->getReservationsByDriverId($driverId);
+        } else {
+            $reservations = $this->reservationService->getAllReservations();
+        }
+
         return response()->json($reservations);
     }
 

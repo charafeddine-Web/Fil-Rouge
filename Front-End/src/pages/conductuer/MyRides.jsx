@@ -72,7 +72,8 @@ const MyRide = ({ user }) => {
         const conducteurId = conducteurRes.data.id
         setConducteurId(conducteurId)
         const response = await getTrajetsByDriverId(conducteurId)
-        console.log("API response:", response)
+        // console.log("API response:", response)
+
         // Map backend data structure to frontend structure
         const mappedRides = response.data.map((trajet) => ({
           id: trajet.id,
