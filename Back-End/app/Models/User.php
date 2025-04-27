@@ -26,17 +26,17 @@ class User extends Authenticatable
 
     public function isConducteur()
     {
-        return $this->type === 'conducteur';
+        return $this->role === 'conducteur';
     }
 
     public function isPassager()
     {
-        return $this->type === 'passager';
+        return $this->role === 'passager';
     }
 
     public function isAdmin()
     {
-        return $this->type === 'admin';
+        return $this->role === 'admin';
     }
 
 
@@ -71,6 +71,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Reservation::class);
     }
+
+
 
 
 

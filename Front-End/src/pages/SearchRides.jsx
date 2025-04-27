@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 import Loader from "../components/Loader";
 import Button from "../components/Button";
 import Header from "../components/Header";
-
 import RideCard from '../components/RideCard';
 import { getAllTrajets, searchTrajets } from '../services/trajets';
 import Footer from "../components/Footer";
+import { toast } from "react-toastify";
 
-const SearchRides = () => {
+const SearchRides = ({user}) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,6 @@ const SearchRides = () => {
   const [smokeAllowed, setSmokeAllowed] = useState(null);
   const [luggageAllowed, setLuggageAllowed] = useState(null);
 
-
   useEffect(() => {
     const fetchAllRides = async () => {
       setLoading(true);
@@ -50,6 +49,7 @@ const SearchRides = () => {
       } catch (error) {
         console.error("Error fetching rides:", error);
         setFilteredRides([]);
+        toast.error("Erreur lors du chargement des trajets");
       } finally {
         setLoading(false);
       }
@@ -58,37 +58,40 @@ const SearchRides = () => {
     fetchAllRides();
   }, []);
 
-
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
     setHasSearched(true);
     
     try {
-      // Update URL parameters without navigation
-      setSearchParams({
-        departure,
-        destination,
-        date,
-        passengers
-      });
-      
       const searchParams = {
-        departure,
-        destination,
-        date,
-        passengers,
-        minPrice: priceRange[0],
-        maxPrice: priceRange[1],
-        smokeAllowed,
-        luggageAllowed
+        departure: departure.trim(),
+        destination: destination.trim(),
+        date: date || null,
+        passengers: parseInt(passengers) || null,
+        minPrice: priceRange[0] || null,
+        maxPrice: priceRange[1] || null,
+        smokeAllowed: smokeAllowed || null,
+        luggageAllowed: luggageAllowed || null
       };
       
       const searchResults = await searchTrajets(searchParams);
       setRides(searchResults);
       setFilteredRides(searchResults);
+      
+      if (searchResults.length === 0) {
+        toast.info("Aucun trajet trouvé pour votre recherche");
+      } else {
+        toast.success(`${searchResults.length} trajets trouvés`);
+      }
     } catch (error) {
       console.error("Error searching rides:", error);
+      if (error.response) {
+        console.error("Server error:", error.response.data);
+        toast.error(error.response.data.message || "Erreur lors de la recherche");
+      } else {
+        toast.error("Erreur lors de la recherche");
+      }
     } finally {
       setLoading(false);
     }
@@ -113,8 +116,13 @@ const SearchRides = () => {
           
           const searchResults = await searchTrajets(searchParams);
           setRides(searchResults);
+          
+          if (searchResults.length === 0) {
+            toast.info("Aucun trajet trouvé pour ces filtres");
+          }
         } catch (error) {
           console.error("Error applying filters:", error);
+          toast.error("Erreur lors de l'application des filtres");
         } finally {
           setLoading(false);
         }
@@ -209,14 +217,13 @@ const SearchRides = () => {
     return <Loader />;
   }
 
-
   const mappedRides = filteredRides.map(ride => ({
     id: ride.id,
     driver: {
-      name: ride.conducteur.user ?.nom || 'Unknown Driver',
-      prenom: ride.conducteur.user ?.prenom || 'Unknown Driver',
-      image: ride.conducteur.user ?.photoDeProfil || '/placeholder-avatar.jpg',
-      rating: ride.conducteur ?.note_moyenne || 4.5,
+      name: ride.conducteur?.user?.nom || 'Unknown Driver',
+      prenom: ride.conducteur?.user?.prenom || 'Unknown Driver',
+      image: ride.conducteur?.user?.photoDeProfil || '/placeholder-avatar.jpg',
+      rating: ride.conducteur?.note_moyenne || 0.0,
       reviewCount: ride.conducteur?.review_count || 0,
       status: ride.conducteur?.status || 'active' 
     },
@@ -226,7 +233,7 @@ const SearchRides = () => {
       location: ride.point_depart || ride.lieu_depart
     },
     destination: {
-      datetime: ride.date_arrivee_prevue ,
+      datetime: ride.date_arrivee_prevue,
       city: ride.lieu_arrivee,
       location: ride.point_arrivee || ride.lieu_arrivee
     },
@@ -238,12 +245,12 @@ const SearchRides = () => {
 
   // Generate page title based on search state
   const pageTitle = hasSearched
-    ? `${mappedRides.length} rides available from ${departure || "all locations"} to ${destination || "all destinations"}`
-    : "All available rides";  
+    ? `${mappedRides.length} trajets disponibles de ${departure || "toutes les villes"} à ${destination || "toutes les destinations"}`
+    : "Tous les trajets disponibles";  
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 pt-8">
-          <Header/>
+      <Header/>
 
       {/* Modern Hero Search Section */}
       <div className="bg-green-50 py-8 shadow-md">
@@ -251,7 +258,7 @@ const SearchRides = () => {
           <form onSubmit={handleSearch} className="bg-white p-6 rounded-xl shadow-lg max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="relative">
-                <label htmlFor="departure" className="block text-sm font-medium text-gray-700 mb-2">From</label>
+                <label htmlFor="departure" className="block text-sm font-medium text-gray-700 mb-2">De</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,13 +272,13 @@ const SearchRides = () => {
                     value={departure}
                     onChange={(e) => setDeparture(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                    placeholder="Enter departure city"
+                    placeholder="Ville de départ"
                   />
                 </div>
               </div>
               
               <div className="relative">
-                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">To</label>
+                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">À</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,13 +292,13 @@ const SearchRides = () => {
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                    placeholder="Enter destination city"
+                    placeholder="Ville d'arrivée"
                   />
                 </div>
               </div>
               
               <div className="relative">
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">When</label>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">Quand</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,7 +316,7 @@ const SearchRides = () => {
               </div>
               
               <div className="relative">
-                <label htmlFor="passengers" className="block text-sm font-medium text-gray-700 mb-2">Passengers</label>
+                <label htmlFor="passengers" className="block text-sm font-medium text-gray-700 mb-2">Passagers</label>
                 <div className="flex">
                   <div className="relative flex-grow">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -334,7 +341,7 @@ const SearchRides = () => {
                     </span>
                   </div>
                   <Button type="submit" className="rounded-l-none px-6 py-3">
-                    <span className="mr-2">Search</span>
+                    <span className="mr-2">Rechercher</span>
                     <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -352,10 +359,10 @@ const SearchRides = () => {
           <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
             {hasSearched ? (
               <>
-                <span className="text-green-600">{mappedRides.length}</span> rides available from {departure || "all locations"} to {destination || "all destinations"}
+                <span className="text-green-600">{mappedRides.length}</span> trajets disponibles de {departure || "toutes les villes"} à {destination || "toutes les destinations"}
               </>
             ) : (
-              <>All available rides</>
+              <>Tous les trajets disponibles</>
             )}
           </h1>
           <button
@@ -365,7 +372,7 @@ const SearchRides = () => {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            {showFilters ? "Hide Filters" : "Show Filters"}
+            {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
           </button>
         </div>
         
@@ -385,11 +392,11 @@ const SearchRides = () => {
                     <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Price Range
+                    Fourchette de prix
                   </h3>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-green-600 font-medium">${priceRange[0]}</span>
-                    <span className="text-green-600 font-medium">${priceRange[1]}</span>
+                    <span className="text-green-600 font-medium">{priceRange[0]} MAD</span>
+                    <span className="text-green-600 font-medium">{priceRange[1]} MAD</span>
                   </div>
                   <input
                     type="range"
@@ -406,7 +413,7 @@ const SearchRides = () => {
                     <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                     </svg>
-                    Sort By
+                    Trier par
                   </h3>
                   <div className="relative">
                     <select
@@ -414,10 +421,10 @@ const SearchRides = () => {
                       onChange={(e) => setSortBy(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all appearance-none"
                     >
-                      <option value="departure_time">Departure Time</option>
-                      <option value="price_low">Price: Low to High</option>
-                      <option value="price_high">Price: High to Low</option>
-                      <option value="rating">Driver Rating</option>
+                      <option value="departure_time">Heure de départ</option>
+                      <option value="price_low">Prix: croissant</option>
+                      <option value="price_high">Prix: décroissant</option>
+                      <option value="rating">Note du conducteur</option>
                     </select>
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -434,7 +441,7 @@ const SearchRides = () => {
                       <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      Preferences
+                      Préférences
                     </h3>
                     <div className="space-y-3">
                       <div className="flex items-center">
@@ -446,7 +453,7 @@ const SearchRides = () => {
                           className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                         />
                         <label htmlFor="smokeAllowed" className="ml-2 block text-sm text-gray-700">
-                          Smoking allowed
+                          Fumer autorisé
                         </label>
                       </div>
                       <div className="flex items-center">
@@ -458,7 +465,7 @@ const SearchRides = () => {
                           className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                         />
                         <label htmlFor="luggageAllowed" className="ml-2 block text-sm text-gray-700">
-                          Luggage allowed
+                          Bagages autorisés
                         </label>
                       </div>
                     </div>
@@ -485,12 +492,12 @@ const SearchRides = () => {
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">No rides found</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">Aucun trajet trouvé</h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Try adjusting your search criteria or check back later for new rides.
+              Essayez d'ajuster vos critères de recherche ou revenez plus tard pour de nouveaux trajets.
             </p>
             <Link to="/offer-ride">
-              <Button className="px-8 py-3">Offer a Ride Instead</Button>
+              <Button className="px-8 py-3">Proposer un trajet</Button>
             </Link>
           </div>
         ) : (
@@ -504,7 +511,7 @@ const SearchRides = () => {
         {mappedRides.length > 10 && (
           <div className="text-center mt-10">
             <Button variant="outline" className="px-8 py-3">
-              Load More Rides
+              Charger plus de trajets
             </Button>
           </div>
         )}
@@ -516,18 +523,18 @@ const SearchRides = () => {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="flex flex-col md:flex-row">
               <div className="md:w-1/2 bg-green-500 p-10 text-white">
-                <h2 className="text-3xl font-bold mb-4">Want to earn extra income?</h2>
+                <h2 className="text-3xl font-bold mb-4">Vous voulez gagner un revenu supplémentaire ?</h2>
                 <p className="mb-8">
-                  Share your rides and make money by filling those empty seats. It's easy, eco-friendly, and economical.
+                  Partagez vos trajets et gagnez de l'argent en remplissant ces sièges vides. C'est facile, écologique et économique.
                 </p>
                 <Link to="/register">
                   <Button variant="white" className="px-8 py-3 bg-white text-black">
-                    Offer a Ride Now
+                    Proposer un trajet maintenant
                   </Button>
                 </Link>
               </div>
               <div className="md:w-1/2 p-10">
-                <h3 className="text-2xl font-bold mb-6 text-gray-800">Why offer rides?</h3>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">Pourquoi proposer des trajets ?</h3>
                 <div className="space-y-6">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 bg-green-100 rounded-lg p-2 mr-4">
@@ -536,8 +543,8 @@ const SearchRides = () => {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-lg font-medium text-gray-800">Earn extra income</h4>
-                      <p className="text-gray-600">Make your travel pay for itself by sharing your ride with others.</p>
+                      <h4 className="text-lg font-medium text-gray-800">Gagnez un revenu supplémentaire</h4>
+                      <p className="text-gray-600">Faites payer votre voyage en partageant votre trajet avec d'autres personnes.</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -547,8 +554,8 @@ const SearchRides = () => {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-lg font-medium text-gray-800">Meet new people</h4>
-                      <p className="text-gray-600">Connect with interesting people and enjoy good conversation.</p>
+                      <h4 className="text-lg font-medium text-gray-800">Rencontrez de nouvelles personnes</h4>
+                      <p className="text-gray-600">Connectez-vous avec des personnes intéressantes et profitez d'une bonne conversation.</p>
                     </div>
                   </div>
                 </div>
@@ -559,7 +566,6 @@ const SearchRides = () => {
       </div>
       <Footer/>
     </div>
-    
   );
 };
 

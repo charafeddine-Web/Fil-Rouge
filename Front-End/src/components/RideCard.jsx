@@ -112,8 +112,8 @@ console.log(rides);
                             {/* Price and Book */}
                             <div className="md:w-1/5 flex flex-col md:items-end">
                                 <div className="text-right mb-4">
-                                    <p className="text-2xl font-bold text-green-600">${ride.price}</p>
-                                    <p className="text-gray-500 text-sm">per person</p>
+                                    <p className="text-2xl font-bold text-green-600">{ride.price} MAD</p>
+                                    <p className="text-gray-500 text-sm">par personne</p>
                                 </div>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <svg className={`w-5 h-5 ${ride.smokeAllowed ? 'text-green-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">

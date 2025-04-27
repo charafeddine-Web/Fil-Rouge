@@ -48,61 +48,68 @@ function App() {
 
   const AdminRoute = ({ children }) => {
     if (loadingUser) return null; 
-
     return user && user.role === 'admin' ? children : <Navigate to="/login" />;
+  };
+
+  const ConducteurRoute = ({ children }) => {
+    if (loadingUser) return null;
+    return user && user.role === 'conducteur' ? children : <Navigate to="/login" />;
+  };
+
+  const PassagerRoute = ({ children }) => {
+    if (loadingUser) return null;
+    return user && user.role === 'passager' ? children : <Navigate to="/login" />;
   };
 
   return (
     <Router>
       <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-          
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        
         <Route element={<PublicLayout />}>
-            <Route path="/" element={< Home />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/ride/:id" element={<RideDetails />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/ride/:id" element={<RideDetails />} />
         </Route>
 
-        <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
+        {/* Routes pour les conducteurs */}
+        <Route element={<ConducteurRoute><UserLayout /></ConducteurRoute>}>
+          <Route path="/dashboard" element={<DriverDashboard user={user} />} />
           <Route path="/my-rides" element={<MyRides user={user}/>} />
-          <Route path="/offer-ride" element={<SearchRides  user={user}/>} /> 
           <Route path="/reservations" element={<Reservations />} />
-          <Route path="/Messaging" element={<Messaging />} />
-          <Route path="/dashboard" element={<DriverDashboard user={user}/>} />
+        </Route>
+
+        {/* Routes pour les passagers */}
+        <Route element={<PassagerRoute><UserLayout /></PassagerRoute>}>
+          <Route path="/offer-ride" element={<SearchRides user={user}/>} />
           <Route path="/Myreservations" element={<My_Reservations />} />
+          <Route path="/ride/:id" element={<RideDetails />} /> 
+        </Route>
+
+        {/* Routes communes pour utilisateurs authentifiés */}
+        <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
+          <Route path="/Messaging" element={<Messaging />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/edit-profile" element={<EditProfile />} />
         </Route>
 
-
-
-        {/* Layout Admin */}
-        {/* <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin/Drivers" element={<DriversSection />} />
-          <Route path="/admin/claims" element={<Réclamations />} />
-          <Route path="/admin/payments" element={<PaymentsSection />} />
-          <Route path="/admin/analytics" element={<AnalyticsSection />} />
-          <Route path="/admin/rides" element={<RidesList />} />
-          <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/settings" element={<Settings />} />
-        </Route> */}
-
-          {/* <Route path="/admin" element={<Navigate to="/admin/overview" />} /> */}
-          <Route path="/admin/:tabId" element={<AdminRoute><Dashboard user={user} logout={logout}/></AdminRoute>} />
+        {/* Routes pour les administrateurs */}
+        <Route element={<AdminRoute><UserLayout /></AdminRoute>}>
+          <Route path="/admin/:tabId" element={<Dashboard user={user} logout={logout}/>} />
+        </Route>
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={5000} draggable   
-      hideProgressBar={false}
-      newestOnTop
-      closeOnClick
-      rtl={false}
-      pauseOnFocusLoss
-      pauseOnHover/>
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        pauseOnHover/>
     </Router>
   );
 }

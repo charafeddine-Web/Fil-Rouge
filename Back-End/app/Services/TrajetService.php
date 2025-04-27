@@ -16,12 +16,12 @@ class TrajetService
 
     public function getAll()
     {
-        return $this->trajetRepository->all();
+        return Trajet::with(['conducteur.user', 'conducteur.vehicule'])->get();
     }
 
     public function getById($id)
     {
-        return $this->trajetRepository->find($id);
+        return Trajet::with(['conducteur.user', 'conducteur.vehicule'])->find($id);
     }
 
     public function create(array $data)

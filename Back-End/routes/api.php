@@ -9,30 +9,50 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\DashboardController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
 
-    Route::get('/trajets/recherche', [TrajetController::class, 'search']);
+    // Routes pour les passagers
+    Route::middleware('role:passager')->group(function () {
+        Route::apiResource('reservations', ReservationController::class);
+        Route::get('/Myreservations', [ReservationController::class, 'myReservations']);
+        // Routes publiques (sans authentification)
+        Route::get('/trajets', [TrajetController::class, 'index']);
+        Route::get('/trajets/recherche', [TrajetController::class, 'search']);
+        Route::get('/trajets/{id}', [TrajetController::class, 'show']);
 
-    Route::apiResource('reservations', ReservationController::class);
-    Route::apiResource('trajets', TrajetController::class);
+    });
+
+    // Routes pour les conducteurs
+    Route::middleware('role:conducteur')->group(function () {
+        Route::apiResource('trajets', TrajetController::class)->except(['index', 'show']);
+        Route::get('/conducteur/trajets/{conducteurId}', [TrajetController::class, 'getTrajetsByConducteur']);
+        Route::patch('/trajets/{id}/cancel', [TrajetController::class, 'cancel']);
+        Route::patch('/trajets/{id}/en_cours', [TrajetController::class, 'en_cours']);
+        Route::patch('/trajets/{id}/termine', [TrajetController::class, 'termine']);
+    });
+
+    // Routes pour les administrateurs
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/dashboard', [DashboardController::class, 'index']);
+        Route::get('/admin/users', [UserController::class, 'index']);
+        Route::get('/admin/trajets', [TrajetController::class, 'index']);
+        Route::get('/admin/reservations', [ReservationController::class, 'index']);
+    });
+
+    // Routes communes
+    Route::post('/messages', [MessageController::class, 'send']);
     Route::apiResource('avis', AvisController::class);
 
-    Route::post('/messages', [MessageController::class, 'send']);
-
-    Route::get('/conducteur/trajets/{conducteurId}', [TrajetController::class, 'getTrajetsByConducteur']);
     Route::get('/conducteur/user/{id}', [ConducteurController::class, 'getByUserId']);
-
-    Route::patch('/trajets/{id}/cancel', [TrajetController::class, 'cancel']);
-    Route::patch('/trajets/{id}/en_cours', [TrajetController::class, 'en_cours']);
-    Route::patch('/trajets/{id}/termine', [TrajetController::class, 'termine']);
-
 });
