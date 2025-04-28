@@ -688,7 +688,7 @@ const Profile = () => {
           </div>
           
           {/* Account Actions */}
-          {!isEditing && (
+          {/* {!isEditing && (
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button 
                 onClick={() => navigate('/change-password')}
@@ -703,7 +703,7 @@ const Profile = () => {
                 Payment Methods
               </Button>
             </div>
-          )}
+          )} */}
         </div>
       </div>
       

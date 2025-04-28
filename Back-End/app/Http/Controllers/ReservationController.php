@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\ReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\Reservation;
 
 class ReservationController extends Controller
 {
@@ -78,5 +79,18 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Reservation not found or delete failed'], 404);
         }
         return response()->json(['message' => 'Reservation deleted successfully']);
+    }
+
+    public function getConducteurReservations()
+    {
+        $conducteurId = auth()->user()->conducteur->id;
+        $reservations = Reservation::whereHas('trajet', function($query) use ($conducteurId) {
+            $query->where('conducteur_id', $conducteurId);
+        })
+        ->with(['trajet', 'passager'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return response()->json($reservations);
     }
 }

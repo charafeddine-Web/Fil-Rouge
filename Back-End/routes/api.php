@@ -41,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/trajets/{id}/cancel', [TrajetController::class, 'cancel']);
         Route::patch('/trajets/{id}/en_cours', [TrajetController::class, 'en_cours']);
         Route::patch('/trajets/{id}/termine', [TrajetController::class, 'termine']);
+        Route::get('/conducteur/reservations', [ReservationController::class, 'getConducteurReservations']);
     });
 
     // Routes pour les administrateurs
@@ -54,11 +55,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // Routes communes
     Route::post('/messages', [MessageController::class, 'send']);
     Route::apiResource('avis', AvisController::class);
+    Route::get('/users', [UserController::class, 'index']);
 
     // Chat routes
     Route::post('/chat/send', [ChatController::class, 'sendMessage']);
     Route::get('/chat/messages/{userId}', [ChatController::class, 'getMessages']);
+    Route::get('/chat/messages/all', [ChatController::class, 'getAllMessages']);
     Route::patch('/chat/messages/{messageId}/read', [ChatController::class, 'markAsRead']);
+
+    // User routes
+    Route::get('/users/{id}', [UserController::class, 'show']);
 
     Route::get('/conducteur/user/{id}', [ConducteurController::class, 'getByUserId']);
 });

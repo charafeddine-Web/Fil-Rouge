@@ -32,14 +32,14 @@ const Navbar = ({ mobile = false }) => {
     // { name: "Home", path: "/" },
     { name: "Search Rides", path: "/offer-ride" },
     { name: "My Reservations", path: "/Myreservations" },
-    { name: "Messaging", path: "/chat/:receiverId" },
+    { name: "Messaging", path: "/messaging" },
   ];
 
   // Links for drivers
   const driverLinks = [
     { name: "Dashboard", path: "/dashboard" },
     { name: "My Rides", path: "/my-rides" },
-    { name: "Messaging", path: "/chat/:receiverId" },
+    { name: "Messaging", path: "/messaging" },
   ];
 
   const isActive = (path) => {

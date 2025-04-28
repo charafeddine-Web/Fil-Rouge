@@ -19,7 +19,7 @@ import SearchRides from './pages/SearchRides';
 import RideDetails from './pages/RideDetails';
 import HowItWorks from './pages/HowItWorks'
 import NotFound from './pages/NotFound';
-import ChatPage from './pages/ChatPage';
+// import ChatPage from './pages/ChatPage';
 
 // Pages utilisateur
 // import OfferRide from './pages/OfferRide';
@@ -92,7 +92,6 @@ function App() {
         {/* Routes communes pour utilisateurs authentifiés */}
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
           <Route path="/Messaging" element={<Messaging />} />
-          <Route path="/chat/:receiverId" element={<ChatPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/edit-profile" element={<EditProfile />} />
         </Route>

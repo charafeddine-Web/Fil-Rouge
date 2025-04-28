@@ -116,8 +116,23 @@ class AuthService
         return ['user' => $user, 'token' => $token];
     }
 
-    public function updateProfile( $user,  $request)
+    public function updateProfile($user, $request)
     {
-        return $this->userRepo->updateProfile($user, $request);
+        try {
+            \Log::info('AuthService: Starting profile update', ['user_id' => $user->id]);
+            
+            $result = $this->userRepo->updateProfile($user, $request);
+            
+            \Log::info('AuthService: Profile update completed', ['user_id' => $user->id]);
+            
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('AuthService: Error updating profile', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id
+            ]);
+            throw $e;
+        }
     }
 }

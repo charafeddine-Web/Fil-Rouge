@@ -23,37 +23,67 @@ class UserRepository implements UserRepositoryInterface
     {
         return User::where('email', $email)->first();
     }
-    public function updateProfile($user,$request)
+    public function updateProfile($user, $data)
     {
-        if ($request->hasFile('photoDeProfil')) {
-            $photoPath = $request->file('photoDeProfil')->store('profile_photos', 'public');
-            $user->photoDeProfil = $photoPath;
-        }
-
-        if ($request->has('password')) {
-            $user->password = Hash::make($request->password);
-        }
-
-        $user->update($request->only(['nom', 'prenom', 'email', 'telephone']));
-
-        if ($user->role === 'conducteur') {
-            $conducteur = Conducteur::firstOrCreate(['user_id' => $user->id]);
-            $conducteur->update($request->only([
-                'num_permis', 'adresse', 'ville', 'date_naissance', 'sexe',
-            ]));
-
-            if ($request->hasFile('photo_permis')) {
-                $conducteur->photo_permis = $request->file('photo_permis')->store('permis', 'public');
+        try {
+            \Log::info('UserRepository: Starting profile update', ['user_id' => $user->id]);
+            
+            // Handle profile photo if it exists
+            if (isset($data['photoDeProfil']) && $data['photoDeProfil'] instanceof \Illuminate\Http\UploadedFile) {
+                $photoPath = $data['photoDeProfil']->store('profile_photos', 'public');
+                $user->photoDeProfil = $photoPath;
             }
 
-            if ($request->hasFile('photo_identite')) {
-                $conducteur->photo_identite = $request->file('photo_identite')->store('identites', 'public');
+            // Handle password if it exists
+            if (isset($data['password'])) {
+                $user->password = Hash::make($data['password']);
             }
 
-            $conducteur->save();
-        }
+            // Update basic user information
+            $user->update([
+                'nom' => $data['nom'] ?? $user->nom,
+                'prenom' => $data['prenom'] ?? $user->prenom,
+                'email' => $data['email'] ?? $user->email,
+                'telephone' => $data['telephone'] ?? $user->telephone,
+            ]);
 
-        return $user->fresh();
+            // Handle driver-specific information
+            if ($user->role === 'conducteur') {
+                $conducteur = Conducteur::firstOrCreate(['user_id' => $user->id]);
+                
+                // Update driver information
+                $conducteur->update([
+                    'num_permis' => $data['num_permis'] ?? $conducteur->num_permis,
+                    'adresse' => $data['adresse'] ?? $conducteur->adresse,
+                    'ville' => $data['ville'] ?? $conducteur->ville,
+                    'date_naissance' => $data['date_naissance'] ?? $conducteur->date_naissance,
+                    'sexe' => $data['sexe'] ?? $conducteur->sexe,
+                ]);
+
+                // Handle driver's license photo
+                if (isset($data['photo_permis']) && $data['photo_permis'] instanceof \Illuminate\Http\UploadedFile) {
+                    $conducteur->photo_permis = $data['photo_permis']->store('permis', 'public');
+                }
+
+                // Handle ID photo
+                if (isset($data['photo_identite']) && $data['photo_identite'] instanceof \Illuminate\Http\UploadedFile) {
+                    $conducteur->photo_identite = $data['photo_identite']->store('identites', 'public');
+                }
+
+                $conducteur->save();
+            }
+
+            \Log::info('UserRepository: Profile update completed', ['user_id' => $user->id]);
+            
+            return $user->fresh();
+        } catch (\Exception $e) {
+            \Log::error('UserRepository: Error updating profile', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id
+            ]);
+            throw $e;
+        }
     }
     public function updateVerificationCode($userId, $code)
     {
