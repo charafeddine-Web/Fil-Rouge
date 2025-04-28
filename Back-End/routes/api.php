@@ -10,6 +10,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ChatController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -53,6 +54,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Routes communes
     Route::post('/messages', [MessageController::class, 'send']);
     Route::apiResource('avis', AvisController::class);
+
+    // Chat routes
+    Route::post('/chat/send', [ChatController::class, 'sendMessage']);
+    Route::get('/chat/messages/{userId}', [ChatController::class, 'getMessages']);
+    Route::patch('/chat/messages/{messageId}/read', [ChatController::class, 'markAsRead']);
 
     Route::get('/conducteur/user/{id}', [ConducteurController::class, 'getByUserId']);
 });
