@@ -45,7 +45,7 @@ class AuthController extends Controller
         ]);
         $result = $this->AuthService->register($validated);
         return response()->json([
-            'message' => 'Utilisateur créé avec succès',
+            'message' => 'User created successfully',
             'user' => $result['user'],
             'token' => $result['token']
         ], 201);
@@ -69,21 +69,25 @@ class AuthController extends Controller
     public function verifyEmail(Request $request)
     {
         $request->validate([
-            'code' => 'required|numeric',
+            'email' => 'required|string',
+            'code' => 'required|string',
         ]);
-        $user = auth()->user();
-        $verified = $this->AuthService->verifyEmail($user->id, $request->code);
-        if (!$verified) {
-            return response()->json(['message' => 'Code invalide'], 400);
+
+        $result = $this->AuthService->verifyEmail($request->email, $request->code);
+
+        if (!$result['success']) {
+            return response()->json(['message' => $result['message']], $result['message'] === 'User not found.' ? 404 : 400);
         }
-        return response()->json(['message' => 'Email vérifié avec succès']);
+
+        return response()->json(['message' => $result['message']]);
     }
+
 
 
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Déconnexion réussie']);
+        return response()->json(['message' => 'Logout successful']);
     }
 
     public function me(Request $request)

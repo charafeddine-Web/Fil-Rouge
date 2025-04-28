@@ -26,34 +26,19 @@ class User extends Authenticatable
 
     public function isConducteur()
     {
-        return $this->type === 'conducteur';
+        return $this->role === 'conducteur';
     }
 
     public function isPassager()
     {
-        return $this->type === 'passager';
+        return $this->role === 'passager';
     }
 
     public function isAdmin()
     {
-        return $this->type === 'admin';
+        return $this->role === 'admin';
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     * relation entre pasqager et condicteur avec table pivot Avis
-     */
-    public function conducteurs()
-    {
-        return $this->belongsToMany(Conducteur::class, 'avis', 'passager_id', 'conducteur_id')
-            ->withPivot('note', 'commentaire', 'created_at')
-            ->withTimestamps();
-    }
-
-    public function avis()
-    {
-        return $this->hasMany(Avis::class);
-    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
@@ -86,6 +71,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Reservation::class);
     }
+
+
 
 
 

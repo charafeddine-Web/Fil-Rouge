@@ -12,20 +12,13 @@ class Avis extends Model
     protected $fillable = [
         'commentaire',
         'note',
-        'passager_id',
-        'conducteur_id',
+        'reservation_id',
     ];
 
-    public function passager()
+    public function reservation()
     {
-        return $this->belongsTo(Passager::class);
+        return $this->belongsTo(Reservation::class);
     }
-
-    public function conducteur()
-    {
-        return $this->belongsTo(Conducteur::class);
-    }
-
 
 
 }

@@ -10,8 +10,7 @@ class TrajetRepository implements TrajetRepositoryInterface
     public function all()
     {
 //        return Trajet::with('conducteur', 'passagers')->get();
-
-        return Trajet::with('conducteur')->get();
+        return Trajet::with('conducteur.user')->get();
     }
 
     public function find(int $id)

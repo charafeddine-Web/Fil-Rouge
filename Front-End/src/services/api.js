@@ -8,9 +8,9 @@ const api = axios.create({
   },
 });
 
-// Ajouter automatiquement le token dans les requêtes (si tu utilises AuthContext ou localStorage)
+// Ajouter Token to LocalStorage 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token'); // ou depuis ton context
+  const token = localStorage.getItem('token'); 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

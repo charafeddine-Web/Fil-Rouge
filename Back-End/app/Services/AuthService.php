@@ -75,9 +75,18 @@ class AuthService
 
         return ['user' => $user, 'token' => $token];
     }
-    public function verifyEmail($userId, $code)
+    public function verifyEmail($email, $code)
     {
-        return $this->userRepo->verifyEmail($userId, $code);
+        $user = $this->userRepo->findByEmail($email);
+        if (!$user) {
+            return ['success' => false, 'message' => 'User not found.'];
+        }
+        $verified = $this->userRepo->verifyEmail($user->id, $code);
+        if (!$verified) {
+            return ['success' => false, 'message' => 'Invalid code'];
+        }
+        return ['success' => true, 'message' => 'Email verified successfully'];
+
     }
 
     public function login($data)
@@ -91,14 +100,14 @@ class AuthService
         }
         if (!$user->email_verified) {
             throw ValidationException::withMessages([
-                'email' => ['message'=>'Veuillez vérifier votre adresse e-mail.']
+                'unverified' => ['Please verify your email address.'],
             ]);
         }
 
 
         if ($user->role === 'conducteur' && $user->status !== 'active') {
             throw ValidationException::withMessages([
-                'message' => ['Compte conducteur non activé.']
+                'message' => ['Driver account not activated.']
             ]);
         }
 

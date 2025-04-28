@@ -1,21 +1,30 @@
 import { createContext, useState, useEffect } from 'react';
-import { getCurrentUser } from '../services/auth'; // fonction API pour récupérer l'utilisateur connecté
+import { getCurrentUser } from '../services/auth'; 
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
     if (token) {
         getCurrentUser(token)
-        .then(setUser)
+        .then((response) => {
+          console.log("User Data:", response.data);  
+          setUser(response.data);
+        })
         .catch(() => {
           setToken(null);
           setUser(null);
           localStorage.removeItem('token');
-        });
+        })
+        .finally(() => {
+          setLoadingUser(false);
+        });;
+    }else{
+      setLoadingUser(false);
     }
   }, [token]);
 
@@ -27,10 +36,18 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('token');
     }
   };
+  const isAuthenticated = !!user;
 
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+  };
+  
   return (
-    <AuthContext.Provider value={{ token, setToken: handleSetToken, user, setUser }}>
+    <AuthContext.Provider value={{ token, setToken: handleSetToken, user, setUser,isAuthenticated, logout,loadingUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
+export default AuthProvider;

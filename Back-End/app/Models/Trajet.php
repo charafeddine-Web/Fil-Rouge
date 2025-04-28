@@ -14,12 +14,21 @@ class Trajet extends Model
         'lieu_depart',
         'lieu_arrivee',
         'date_depart',
-        'nombre_places'
+        'nombre_places',
+        'prix_par_place',
+        'description',
+        'statut',
+        'bagages_autorises',
+        'animaux_autorises',
+        'fumeur_autorise',
+        'options'
     ];
+
 
     public function conducteur()
     {
-        return $this->belongsTo(Conducteur::class);
+        return $this->belongsTo(Conducteur::class, 'conducteur_id');
+
     }
 
     /**

@@ -15,9 +15,16 @@ class ReservationController extends Controller
         $this->reservationService = $reservationService;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $reservations = $this->reservationService->getAllReservations();
+        $driverId = $request->query('conducteur_id');
+
+        if ($driverId) {
+            $reservations = $this->reservationService->getReservationsByDriverId($driverId);
+        } else {
+            $reservations = $this->reservationService->getAllReservations();
+        }
+
         return response()->json($reservations);
     }
 
@@ -43,9 +50,7 @@ class ReservationController extends Controller
             'prix_total' => 'nullable|numeric|min:0'
         ]);
 
-
         $reservation = $this->reservationService->createReservation($validated);
-
         return response()->json($reservation, 201);
     }
 
@@ -59,25 +64,19 @@ class ReservationController extends Controller
             'places_reservees' => 'sometimes|integer|min:1',
             'prix_total' => 'sometimes|numeric|min:0'
         ]);
-
-
         $updated = $this->reservationService->updateReservation($id, $validated);
-
         if (!$updated) {
             return response()->json(['message' => 'Reservation not found or update failed'], 404);
         }
-
         return response()->json(['message' => 'Reservation updated successfully']);
     }
 
     public function destroy(int $id): JsonResponse
     {
         $deleted = $this->reservationService->deleteReservation($id);
-
         if (!$deleted) {
             return response()->json(['message' => 'Reservation not found or delete failed'], 404);
         }
-
         return response()->json(['message' => 'Reservation deleted successfully']);
     }
 }

@@ -1,24 +1,65 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { motion } from "framer-motion";
+import { login } from "../services/auth";
+import { toast } from 'react-toastify'; 
+import { useNavigate } from 'react-router-dom'; 
+import { AuthContext } from "../context/AuthContext";
+import { getCurrentUser } from "../services/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const navigate = useNavigate(); 
+  const { setToken, setUser } = useContext(AuthContext);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simuler un appel API
-    setTimeout(() => {
-      setLoading(false);
-      // Redirection ou gestion de connexion à implémenter
-    }, 1500);
-  };
 
+    const data = { 
+      email,
+      password,
+    };
+
+    try {
+      const response = await login(data);
+      localStorage.setItem('token', response.data.token); 
+      const token = response.data.token;
+      setToken(token);
+      toast.success("Login réussie !");
+      const userResponse = await getCurrentUser();
+      setUser(userResponse.data);
+      // const role = userResponse.data.role;
+      const redirectUser = (role) => {
+        if (role === "admin") navigate('/admin/dashboard');
+        else if (role === "conducteur") navigate('/dashboard');
+        else navigate('/offer-ride');
+      };
+      redirectUser(userResponse.data.role);
+      
+
+    } catch (error) {
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors; 
+        // console.log(error.response.data.errors); 
+        if (errors.unverified) {
+          toast.error(errors.unverified[0]);
+          return navigate(`/verify-email?email=${encodeURIComponent(data.email)}`); 
+        }
+        Object.values(error.response.data.errors).flat().forEach((msg) => {
+          toast.error(msg);
+        });
+      } else {
+        toast.error("An error has occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-gray-100 px-4">
       <div className="absolute inset-0 overflow-hidden">
@@ -82,13 +123,13 @@ const Login = () => {
             </div>
           </form>
           
-          <div className="relative flex items-center mt-8">
+          {/* <div className="relative flex items-center mt-8">
             <div className="flex-grow border-t border-gray-200"></div>
             <span className="flex-shrink mx-4 text-gray-400 font-urbanist">or continue with</span>
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
           
-          <div className="grid grid-cols-3 gap-3 mt-6">
+          {/* <div className="grid grid-cols-3 gap-3 mt-6">
             <button 
               type="button" 
               className="flex justify-center items-center py-2.5 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -113,7 +154,7 @@ const Login = () => {
                 <path d="M24 4.557c-0.883 0.392-1.832 0.656-2.828 0.775 1.017-0.609 1.798-1.574 2.165-2.724-0.951 0.564-2.005 0.974-3.127 1.195-0.897-0.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-0.205-7.719-2.165-10.148-5.144-1.29 2.213-0.669 5.108 1.523 6.574-0.806-0.026-1.566-0.247-2.229-0.616-0.054 2.281 1.581 4.415 3.949 4.89-0.693 0.188-1.452 0.232-2.224 0.084 0.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646 0.962-0.695 1.797-1.562 2.457-2.549z" fill="#1DA1F2"/>
               </svg>
             </button>
-          </div>
+          </div> */}  
           
           <p className="mt-8 text-center text-sm text-gray-500 font-urbanist">
             Don't have an account?{" "}

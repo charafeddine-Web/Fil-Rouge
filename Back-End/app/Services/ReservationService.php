@@ -39,4 +39,9 @@ class ReservationService
     {
         return $this->reservationRepository->delete($id);
     }
+    public function getReservationsByDriverId(int $driverId)
+    {
+        return $this->reservationRepository->getReservationsByUserId($driverId);
+    }
+
 }
