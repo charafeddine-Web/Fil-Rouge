@@ -33,6 +33,7 @@ export default function Dashboard({user, logout}) {
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [recentActivities, setRecentActivities] = useState(null);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -58,13 +59,14 @@ export default function Dashboard({user, logout}) {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [dashboardStats, analytics] = await Promise.all([
+        const [dashboardStats, analytics, recentActivities] = await Promise.all([
           adminService.getDashboardStats(),
           adminService.getAnalytics(),
           adminService.getRecentActivities()
         ]);
         setDashboardData(dashboardStats);
         setAnalyticsData(analytics);
+        setRecentActivities(recentActivities);
         setError(null);
       } catch (err) {
         console.error('Dashboard data error:', err);
@@ -108,7 +110,7 @@ export default function Dashboard({user, logout}) {
 
     switch (activeTab) {
       case 'overview':
-        return <Overview stats={dashboardData?.stats} recentActivities={dashboardData?.recent_activities} />;
+        return <Overview stats={dashboardData?.stats} recentActivities={recentActivities} />;
       case 'drivers':
         return <DriversSection />;
       case 'claims':
@@ -131,20 +133,10 @@ export default function Dashboard({user, logout}) {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between p-4">
               <div className="relative flex-1 max-w-xs">
-                {/* <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Rechercher..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div> */}
+               
               </div>
               <div className="flex items-center space-x-4">
-                <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <Bell size={20} />
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-                </button>
+              
                 <div className="relative" ref={menuRef}>
                   <div
                     onClick={() => setMenuOpen(!menuOpen)}

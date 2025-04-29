@@ -1,208 +1,230 @@
 import Loader from "../../components/Loader";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useState, useEffect } from 'react';
+import adminService from '../../services/admin';
 
 // Composant section Analyses
 export default function AnalyticsSection() {
-    // Données pour les graphiques
-    const monthlyData = [
-      { name: 'Jan', users: 400, rides: 240, revenue: 9500 },
-      { name: 'Fév', users: 450, rides: 300, revenue: 12000 },
-      { name: 'Mar', users: 520, rides: 340, revenue: 14000 },
-      { name: 'Avr', users: 580, rides: 390, revenue: 16500 },
-      { name: 'Mai', users: 620, rides: 420, revenue: 18000 },
-      { name: 'Jun', users: 650, rides: 450, revenue: 19500 },
-      { name: 'Jul', users: 680, rides: 470, revenue: 20500 },
-      { name: 'Aoû', users: 700, rides: 490, revenue: 21500 },
-      { name: 'Sep', users: 720, rides: 510, revenue: 22000 },
-      { name: 'Oct', users: 750, rides: 530, revenue: 23000 },
-      { name: 'Nov', users: 780, rides: 550, revenue: 24000 },
-      { name: 'Déc', users: 800, rides: 580, revenue: 25500 },
-    ];
-    
+    const [loading, setLoading] = useState(true);
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchAnalytics = async () => {
+            try {
+                setLoading(true);
+                const data = await adminService.getAnalytics();
+                setAnalyticsData(data);
+            } catch (err) {
+                setError('Erreur lors du chargement des données');
+                console.error('Error fetching analytics:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAnalytics();
+    }, []);
+
+    // Couleurs pour les graphiques
+    const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B'];
+
+    if (loading) {
+        return <Loader />;
+    }
+
+    if (error) {
+        return (
+            <div className="text-center text-red-600 p-4">
+                {error}
+            </div>
+        );
+    }
+
+    // Transformer les données du backend pour les graphiques
+    const monthlyData = analyticsData?.daily_reservations?.map(item => ({
+        name: new Date(item.date).toLocaleDateString('fr-FR', { month: 'short' }),
+        reservations: item.count,
+        users: analyticsData.user_growth.find(u => u.date === item.date)?.count || 0,
+        revenue: analyticsData.revenue.find(r => r.date === item.date)?.total || 0
+    })) || [];
+
+    // Calculer les totaux
+    const totalReservations = analyticsData?.daily_reservations?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+    const totalUsers = analyticsData?.user_growth?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+    const totalRevenue = Number(analyticsData?.revenue?.reduce((acc, curr) => acc + (curr.total || 0), 0)) || 0;
+
     // Données pour les graphiques circulaires
-    const vehicleTypeData = [
-      { name: 'Citadines', value: 45 },
-      { name: 'Berlines', value: 30 },
-      { name: 'SUV', value: 15 },
-      { name: 'Utilitaires', value: 10 }
+    const roleData = [
+        { name: 'Passagers', value: analyticsData?.role_stats?.passagers || 0 },
+        { name: 'Conducteurs', value: analyticsData?.role_stats?.conducteurs || 0 }
     ];
-    
-    const userAgeData = [
-      { name: '18-25', value: 25 },
-      { name: '26-35', value: 40 },
-      { name: '36-45', value: 20 },
-      { name: '46+', value: 15 }
-    ];
-  
+
+    const vehicleData = Object.entries(analyticsData?.vehicle_stats || {}).map(([type, count]) => ({
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        value: count
+    }));
+
+    // Calculer les pourcentages de croissance
+    const calculateGrowth = (data) => {
+        if (!data || data.length < 2) return 0;
+        const lastValue = data[data.length - 1].count;
+        const previousValue = data[data.length - 2].count;
+        return previousValue === 0 ? 0 : ((lastValue - previousValue) / previousValue) * 100;
+    };
+
+    const reservationsGrowth = calculateGrowth(analyticsData?.daily_reservations) || 0;
+    const usersGrowth = calculateGrowth(analyticsData?.user_growth) || 0;
+    const revenueGrowth = calculateGrowth(analyticsData?.revenue) || 0;
+
     return (
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Analyses et statistiques</h1>
-          <div className="flex space-x-2 mt-3 sm:mt-0">
-            <select className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
-              <option value="year">Année 2025</option>
-              <option value="last_year">Année 2024</option>
-              <option value="all">Toutes les données</option>
-            </select>
-            <button className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-              Exporter
-            </button>
-          </div>
-        </div>
-        
-        {/* Graphiques des tendances */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Tendances mensuelles</h2>
-          <div className="h-80">
-            {/* Ici on placerait un composant LineChart de Recharts */}
-            <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Graphique des tendances mensuelles</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 mt-4">
-            <div className="flex items-center">
-              <div className="h-3 w-3 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">Utilisateurs</span>
-            </div>
-            <div className="flex items-center">
-              <div className="h-3 w-3 bg-blue-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">Trajets</span>
-            </div>
-            <div className="flex items-center">
-              <div className="h-3 w-3 bg-purple-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600">Revenus (€)</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Graphiques circulaires */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Types de véhicules</h2>
-            <div className="h-64">
-              {/* Ici on placerait un composant PieChart de Recharts */}
-              <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
-                <p className="text-gray-500">Graphique des types de véhicules</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-              {vehicleTypeData.map((entry, index) => (
-                <div key={`vehicle-${index}`} className="flex items-center">
-                  <div className={`h-3 w-3 rounded-full mr-2 bg-${['green', 'blue', 'purple', 'yellow'][index]}-500`}></div>
-                  <span className="text-sm text-gray-600">{entry.name} ({entry.value}%)</span>
+        <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Analyses et statistiques</h1>
+                <div className="flex space-x-2 mt-3 sm:mt-0">
+                    <select className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="year">Année 2025</option>
+                        <option value="last_year">Année 2024</option>
+                        <option value="all">Toutes les données</option>
+                    </select>
+                    <button className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        Exporter
+                    </button>
                 </div>
-              ))}
             </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Âge des utilisateurs</h2>
-            <div className="h-64">
-              {/* Ici on placerait un composant PieChart de Recharts */}
-              <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
-                <p className="text-gray-500">Graphique des âges utilisateurs</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-              {userAgeData.map((entry, index) => (
-                <div key={`age-${index}`} className="flex items-center">
-                  <div className={`h-3 w-3 rounded-full mr-2 bg-${['green', 'blue', 'purple', 'yellow'][index]}-500`}></div>
-                  <span className="text-sm text-gray-600">{entry.name} ({entry.value}%)</span>
+            
+            {/* Graphiques des tendances */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Tendances mensuelles</h2>
+                <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={monthlyData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis yAxisId="left" />
+                            <YAxis yAxisId="right" orientation="right" />
+                            <Tooltip />
+                            <Legend />
+                            <Line yAxisId="left" type="monotone" dataKey="users" stroke="#10B981" name="Nouveaux utilisateurs" />
+                            <Line yAxisId="left" type="monotone" dataKey="reservations" stroke="#3B82F6" name="Réservations" />
+                            <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#8B5CF6" name="Revenus (€)" />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </div>
-              ))}
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
+                    <div className="flex items-center">
+                        <div className="h-3 w-3 bg-green-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Nouveaux utilisateurs</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="h-3 w-3 bg-blue-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Réservations</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="h-3 w-3 bg-purple-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Revenus (€)</span>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        
-        {/* Statistiques additionnelles */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Statistiques principales</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-              <p className="text-gray-500 text-sm">Total utilisateurs</p>
-              <p className="text-2xl font-bold mt-1">4,856</p>
-              <p className="text-sm text-green-600 mt-2">+15% ce mois</p>
+
+            {/* Graphiques circulaires */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Répartition des rôles</h2>
+                    <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={roleData}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                    {roleData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                        {roleData.map((entry, index) => (
+                            <div key={`role-${index}`} className="flex items-center">
+                                <div className={`h-3 w-3 rounded-full mr-2 bg-${['green', 'blue'][index]}-500`}></div>
+                                <span className="text-sm text-gray-600">{entry.name} ({entry.value})</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Types de véhicules</h2>
+                    <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={vehicleData}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                    {vehicleData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                        {vehicleData.map((entry, index) => (
+                            <div key={`vehicle-${index}`} className="flex items-center">
+                                <div className={`h-3 w-3 rounded-full mr-2 bg-${['green', 'blue', 'purple', 'yellow'][index]}-500`}></div>
+                                <span className="text-sm text-gray-600">{entry.name} ({entry.value})</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
             
-            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-              <p className="text-gray-500 text-sm">Total conducteurs</p>
-              <p className="text-2xl font-bold mt-1">728</p>
-              <p className="text-sm text-green-600 mt-2">+8% ce mois</p>
+            {/* Statistiques principales */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Statistiques principales</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500 text-sm">Total utilisateurs</p>
+                        <p className="text-2xl font-bold mt-1">{totalUsers}</p>
+                        <p className={`text-sm ${usersGrowth >= 0 ? 'text-green-600' : 'text-red-600'} mt-2`}>
+                            {usersGrowth >= 0 ? '+' : ''}{usersGrowth.toFixed(1)}% ce mois
+                        </p>
+                    </div>
+                    
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500 text-sm">Total réservations</p>
+                        <p className="text-2xl font-bold mt-1">{totalReservations}</p>
+                        <p className={`text-sm ${reservationsGrowth >= 0 ? 'text-green-600' : 'text-red-600'} mt-2`}>
+                            {reservationsGrowth >= 0 ? '+' : ''}{reservationsGrowth.toFixed(1)}% ce mois
+                        </p>
+                    </div>
+                    
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500 text-sm">Revenus totaux</p>
+                        <p className="text-2xl font-bold mt-1">{totalRevenue.toFixed(2)}€</p>
+                        <p className={`text-sm ${revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'} mt-2`}>
+                            {revenueGrowth >= 0 ? '+' : ''}{revenueGrowth.toFixed(1)}% ce mois
+                        </p>
+                    </div>
+                </div>
             </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-              <p className="text-gray-500 text-sm">Trajets complétés</p>
-              <p className="text-2xl font-bold mt-1">24,159</p>
-              <p className="text-sm text-green-600 mt-2">+12% ce mois</p>
-            </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-              <p className="text-gray-500 text-sm">Revenus totaux</p>
-              <p className="text-2xl font-bold mt-1">357,850€</p>
-              <p className="text-sm text-green-600 mt-2">+18% ce mois</p>
-            </div>
-          </div>
         </div>
-        
-        {/* Tableau des tendances par ville */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mt-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Performance par ville</h2>
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-gray-500 bg-gray-50">
-                  <th className="py-3 px-4 font-medium">Ville</th>
-                  <th className="py-3 px-4 font-medium">Utilisateurs</th>
-                  <th className="py-3 px-4 font-medium">Conducteurs</th>
-                  <th className="py-3 px-4 font-medium">Trajets</th>
-                  <th className="py-3 px-4 font-medium">Revenus</th>
-                  <th className="py-3 px-4 font-medium">Évolution</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-4 px-4 font-medium">Paris</td>
-                  <td className="py-4 px-4">1,428</td>
-                  <td className="py-4 px-4">215</td>
-                  <td className="py-4 px-4">8,540</td>
-                  <td className="py-4 px-4 font-medium">124,650€</td>
-                  <td className="py-4 px-4 text-green-600">+21%</td>
-                </tr>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-4 px-4 font-medium">Lyon</td>
-                  <td className="py-4 px-4">845</td>
-                  <td className="py-4 px-4">130</td>
-                  <td className="py-4 px-4">4,320</td>
-                  <td className="py-4 px-4 font-medium">72,540€</td>
-                  <td className="py-4 px-4 text-green-600">+15%</td>
-                </tr>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-4 px-4 font-medium">Marseille</td>
-                  <td className="py-4 px-4">720</td>
-                  <td className="py-4 px-4">105</td>
-                  <td className="py-4 px-4">3,850</td>
-                  <td className="py-4 px-4 font-medium">62,350€</td>
-                  <td className="py-4 px-4 text-green-600">+12%</td>
-                </tr>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-4 px-4 font-medium">Bordeaux</td>
-                  <td className="py-4 px-4">590</td>
-                  <td className="py-4 px-4">85</td>
-                  <td className="py-4 px-4">2,950</td>
-                  <td className="py-4 px-4 font-medium">48,750€</td>
-                  <td className="py-4 px-4 text-green-600">+18%</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="py-4 px-4 font-medium">Lille</td>
-                  <td className="py-4 px-4">480</td>
-                  <td className="py-4 px-4">65</td>
-                  <td className="py-4 px-4">2,380</td>
-                  <td className="py-4 px-4 font-medium">39,450€</td>
-                  <td className="py-4 px-4 text-yellow-600">+8%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     );
-  }
+}
