@@ -1,3 +1,4 @@
+import Loader from "../../components/Loader";
 
 // Composant section Paiements
 export default function PaymentsSection() {

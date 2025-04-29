@@ -686,24 +686,6 @@ const Profile = () => {
               )}
             </form>
           </div>
-          
-          {/* Account Actions */}
-          {/* {!isEditing && (
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button 
-                onClick={() => navigate('/change-password')}
-                className="block w-full bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                Change Password
-              </Button>
-              <Button 
-                onClick={() => navigate('/payment-methods')}
-                className="block w-full bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                Payment Methods
-              </Button>
-            </div>
-          )} */}
         </div>
       </div>
       

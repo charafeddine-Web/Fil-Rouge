@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\MessageController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\AdminController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -45,11 +45,35 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Routes pour les administrateurs
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/admin/dashboard', [DashboardController::class, 'index']);
-        Route::get('/admin/users', [UserController::class, 'index']);
-        Route::get('/admin/trajets', [TrajetController::class, 'index']);
-        Route::get('/admin/reservations', [ReservationController::class, 'index']);
+    Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+        // Dashboard
+        Route::get('/admin/dashboard', [AdminController::class, 'getDashboardStats']);
+        Route::get('/admin/analytics', [AdminController::class, 'getAnalytics']);
+        Route::get('/admin/dashboard/activities', [AdminController::class, 'getRecentActivities']);
+        Route::get('/admin/dashboard/revenue', [AdminController::class, 'getRevenueStats']);
+
+        // User Management
+        Route::get('/admin/users', [AdminController::class, 'getUsers']);
+        Route::patch('/admin/users/{id}/status', [AdminController::class, 'updateUserStatus']);
+
+        // Driver Management
+        Route::get('/admin/drivers', [AdminController::class, 'getDrivers']);
+//        Route::patch('/admin/drivers/{id}/status', [AdminController::class, 'updateDriverStatus']);
+
+        // Ride Management
+        Route::get('/admin/rides', [AdminController::class, 'getRides']);
+        Route::patch('/admin/rides/{id}/status', [AdminController::class, 'updateRideStatus']);
+
+        // Reservation Management
+        Route::get('/admin/reservations', [AdminController::class, 'getReservations']);
+
+        // Complaints Management
+        Route::get('/admin/complaints', [AdminController::class, 'getComplaints']);
+        Route::patch('/admin/complaints/{id}/status', [AdminController::class, 'updateComplaintStatus']);
+
+        // Payment Management
+        Route::get('/admin/payments', [AdminController::class, 'getPayments']);
+        Route::get('/admin/payments/stats', [AdminController::class, 'getPaymentStats']);
     });
 
     // Routes communes

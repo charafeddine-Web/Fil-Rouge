@@ -26,7 +26,7 @@ import NotFound from './pages/NotFound';
 import MyRides from './pages/conductuer/MyRides';
 import Reservations from './pages/conductuer/Reservations';
 import Profile from './pages/Profile';
-import EditProfile from './pages/EditProfile';
+// import EditProfile from './pages/EditProfile';
 import My_Reservations from './pages/passager/My_Reservations';
 import Messaging from  "./pages/Messaging";
 import DriverDashboard from './pages/conductuer/DriverDashboard';
@@ -93,7 +93,7 @@ function App() {
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
           <Route path="/Messaging" element={<Messaging />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/edit-profile" element={<EditProfile />} />
+          {/* <Route path="/edit-profile" element={<EditProfile />} /> */}
         </Route>
 
         {/* Routes pour les administrateurs */}

@@ -1,3 +1,4 @@
+import Loader from "../../components/Loader";
 
 // Composant section Analyses
 export default function AnalyticsSection() {

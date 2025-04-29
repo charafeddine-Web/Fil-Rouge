@@ -1,127 +1,173 @@
-import {  
-  AlertTriangle, 
-  CheckCircle,
-  Filter
-} from 'lucide-react';
-export default function Overview({ stats, pendingDrivers, recentClaims }) {
-    return (
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Vue d'ensemble</h1>
-          <div className="mt-2 sm:mt-0">
-            <button className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-              <Filter size={16} className="mr-2" />
-              Filtrer
-            </button>
-          </div>
-        </div>
-        
-        {/* Statistiques */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <StatCard key={index} stat={stat} />
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Conducteurs en attente */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Conducteurs en attente</h2>
-              <button className="text-green-600 text-sm font-medium hover:text-green-700">Voir tout</button>
-            </div>
-            <div className="overflow-x-auto rounded-lg">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="pb-3 pl-4 pr-2">ID</th>
-                    <th className="pb-3 px-2">Nom</th>
-                    <th className="pb-3 px-2">Véhicule</th>
-                    <th className="pb-3 pr-4 pl-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingDrivers.map((driver) => (
-                    <tr key={driver.id} className="border-b group hover:bg-gray-50">
-                      <td className="py-3 pl-4 pr-2 font-medium text-gray-700">{driver.id}</td>
-                      <td className="py-3 px-2">{driver.name}</td>
-                      <td className="py-3 px-2">{driver.vehicle}</td>
-                      <td className="py-3 pr-4 pl-2">
-                        <div className="flex space-x-2 opacity-70 group-hover:opacity-100">
-                          <button className="p-1 text-green-600 hover:bg-green-50 rounded">
-                            <CheckCircle size={16} />
-                          </button>
-                          <button className="p-1 text-red-600 hover:bg-red-50 rounded">
-                            <AlertTriangle size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          {/* Réclamations récentes */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Réclamations récentes</h2>
-              <button className="text-green-600 text-sm font-medium hover:text-green-700">Voir tout</button>
-            </div>
-            <div className="overflow-x-auto rounded-lg">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="pb-3 pl-4 pr-2">ID</th>
-                    <th className="pb-3 px-2">Utilisateur</th>
-                    <th className="pb-3 px-2">Problème</th>
-                    <th className="pb-3 pr-4 pl-2">Statut</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentClaims.map((claim) => (
-                    <tr key={claim.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 pl-4 pr-2 font-medium text-gray-700">{claim.id}</td>
-                      <td className="py-3 px-2">{claim.user}</td>
-                      <td className="py-3 px-2">{claim.issue}</td>
-                      <td className="py-3 pr-4 pl-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          claim.status === 'Non résolu' 
-                            ? 'bg-red-100 text-red-800' 
-                            : claim.status === 'En cours' 
-                            ? 'bg-yellow-100 text-yellow-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {claim.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  function StatCard({ stat }) {
-  const isPositiveChange = stat.change.startsWith('+');
+import { Users, BarChart2, AlertTriangle, CreditCard, Clock, MapPin, Car, User } from 'lucide-react';
+import Loader from "../../components/Loader";
+
+export default function Overview({ stats, recentActivities }) {
+  const formatNumber = (number) => {
+    return new Intl.NumberFormat('us-US').format(number);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('us-US', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('us-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getActivityIcon = (status) => {
+    switch (status) {
+      case 'en_cours':
+        return <Car className="text-blue-500" size={20} />;
+      case 'termine':
+        return <CheckCircle className="text-green-500" size={20} />;
+      default:
+        return <MapPin className="text-purple-500" size={20} />;
+    }
+  };
+
+  const getActivityColor = (status) => {
+    switch (status) {
+      case 'en_cours':
+        return 'bg-blue-50 text-blue-700';
+      case 'termine':
+        return 'bg-green-50 text-green-700';
+      default:
+        return 'bg-purple-50 text-purple-700';
+    }
+  };
+
+  const getRoleBadge = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'driver':
+        return 'bg-green-100 text-green-800';
+      case 'user':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow transition-shadow border border-gray-100">
-      <div className="flex justify-between">
-        <div>
-          <p className="text-gray-500 text-sm font-medium">{stat.title}</p>
-          <p className="text-2xl font-bold mt-1">{stat.value}</p>
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Utilisateurs</p>
+              <p className="text-2xl font-semibold">{formatNumber(stats?.total_users || 0)}</p>
+            </div>
+            <div className="p-3 bg-blue-50 rounded-full">
+              <Users className="text-blue-500" size={24} />
+            </div>
+          </div>
         </div>
-        <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
-          {stat.icon}
+
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Conducteurs</p>
+              <p className="text-2xl font-semibold">{formatNumber(stats?.total_drivers || 0)}</p>
+            </div>
+            <div className="p-3 bg-green-50 rounded-full">
+              <Users className="text-green-500" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Trajets Actifs</p>
+              <p className="text-2xl font-semibold">{formatNumber(stats?.active_rides || 0)}</p>
+            </div>
+            <div className="p-3 bg-yellow-50 rounded-full">
+              <BarChart2 className="text-yellow-500" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Revenus Totaux</p>
+              <p className="text-2xl font-semibold">{formatCurrency(stats?.total_revenue || 0)}</p>
+            </div>
+            <div className="p-3 bg-purple-50 rounded-full">
+              <CreditCard className="text-purple-500" size={24} />
+            </div>
+          </div>
         </div>
       </div>
-      <div className={`text-sm mt-4 flex items-center ${isPositiveChange ? 'text-green-600' : 'text-red-600'}`}>
-        <span className="font-medium">{stat.change}</span>
-        <span className="ml-1 text-gray-500"> depuis hier</span>
+
+      {/* Recent Activities */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Activités Récentes</h2>
+            <button className="text-sm text-blue-600 hover:text-blue-800">Voir tout</button>
+          </div>
+        </div>
+        <div className="divide-y divide-gray-200">
+          {!recentActivities ? (
+            <div className="p-6 text-center text-gray-500">
+              <Loader />
+            </div>
+          ) : recentActivities.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              Aucune activité récente
+            </div>
+          ) : (
+            recentActivities.map((activity, index) => (
+              <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start space-x-4">
+                  <div className={`p-2 rounded-full ${getActivityColor(activity.statut)}`}>
+                    {getActivityIcon(activity.statut)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-medium text-gray-900">{activity.nom} {activity.prenom}</p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadge(activity.role)}`}>
+                            {activity.role === 'admin' ? 'Administrateur' : 
+                             activity.role === 'driver' ? 'Conducteur' : 
+                             'Utilisateur'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {activity.statut === 'en_cours' ? 'A commencé un trajet' : 
+                           activity.statut === 'termine' ? 'A terminé un trajet' : 
+                           'A créé un trajet'}
+                        </p>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock size={16} className="mr-1" />
+                        {formatDate(activity.activity_date)}
+                      </div>
+                    </div>
+                    {activity.details && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <p>{activity.details}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
