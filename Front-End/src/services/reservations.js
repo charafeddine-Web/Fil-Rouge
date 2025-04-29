@@ -9,3 +9,8 @@ export const getReservationsByUserId = (userId) => api.get(`/reservations?conduc
 export const cancelReservation = (reservationId) => api.patch(`/reservations/${reservationId}`, { status: 'annulee' });
 export const getReservationsByTrajetId = (trajetId) => api.get(`/reservations?trajet_id=${trajetId}`);
 export const getReservations = (trajetId) => api.get(`/reservations?trajet_id=${trajetId}`);
+
+export const createReservation = (reservationData) => {
+  console.log("Sending reservation data to API:", reservationData);
+  return api.post('/reservations', reservationData);
+};

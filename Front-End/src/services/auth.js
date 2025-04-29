@@ -60,20 +60,30 @@ export const getCurrentUser = (token) => {
     });
 };
 export const verifyEmail = (data) => api.post('/verify-email', data);
+
 export const updateProfile = (data, token) => {
-  const formData = new FormData();
-
-  for (const [key, value] of Object.entries(data)) {
-    formData.append(key, value);
-  }
-
-  return api.put('/user/profile', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      'Authorization': `Bearer ${token}`
+  // Check if data is already FormData
+  let formData;
+  if (data instanceof FormData) {
+    formData = data;
+  } else {
+    // Convert to FormData if it's a regular object
+    formData = new FormData();
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
     }
-  });
+  }
+  
+  console.log('Sending profile update with token:', token);
+  
+  // Print out all form data entries for debugging
+  for (let pair of formData.entries()) {
+    console.log(pair[0] + ': ' + (pair[1] instanceof Blob ? 'File' : pair[1]));
+  }
+  
+  return api.put('/user/profile', formData);
 };
 
-// Export par défaut pour les nouvelles fonctionnalités
 export default authService;

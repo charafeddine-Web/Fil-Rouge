@@ -93,9 +93,9 @@ export default function Dashboard({user, logout}) {
   const tabs = [
     { id: 'overview', title: 'Vue d\'ensemble', icon: <BarChart2 size={16} /> },
     { id: 'drivers', title: 'Conducteurs', icon: <Users size={16} /> },
+    { id: 'analytics', title: 'Analyses', icon: <BarChart2 size={16} /> },
     { id: 'claims', title: 'Réclamations', icon: <AlertTriangle size={16} /> },
-    { id: 'payments', title: 'Paiements', icon: <CreditCard size={16} /> },
-    { id: 'analytics', title: 'Analyses', icon: <BarChart2 size={16} /> }
+    { id: 'payments', title: 'Paiements', icon: <CreditCard size={16} /> }
   ];
   
   const renderTabContent = () => {

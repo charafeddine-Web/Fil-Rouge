@@ -81,7 +81,7 @@ export default function AnalyticsSection() {
         <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Analyses et statistiques</h1>
-                <div className="flex space-x-2 mt-3 sm:mt-0">
+                {/* <div className="flex space-x-2 mt-3 sm:mt-0">
                     <select className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="year">Année 2025</option>
                         <option value="last_year">Année 2024</option>
@@ -90,7 +90,7 @@ export default function AnalyticsSection() {
                     <button className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                         Exporter
                     </button>
-                </div>
+                </div> */}
             </div>
             
             {/* Graphiques des tendances */}
@@ -197,7 +197,7 @@ export default function AnalyticsSection() {
             </div>
             
             {/* Statistiques principales */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            {/* <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Statistiques principales</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
@@ -224,7 +224,7 @@ export default function AnalyticsSection() {
                         </p>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }

@@ -22,7 +22,7 @@ class UserController extends Controller
     {
         try {
             $user = auth()->user();
-            
+
             // Log the incoming request data
             \Log::info('Profile update request data:', [
                 'user_id' => $user->id,
@@ -44,7 +44,7 @@ class UserController extends Controller
                 'date_naissance' => 'nullable|required_if:role,conducteur|date',
                 'sexe' => 'nullable|required_if:role,conducteur|in:homme,femme',
                 'photo_permis' => 'nullable|required_if:role,conducteur|image|mimes:jpg,jpeg,png|max:2048',
-                'photo_identite' => 'nullable|required_if:role,conducteur|image|mimes:jpg,jpeg,png|max:2048',
+                'photo_identite' => 'nullable|required_if:role,conducteur|image|jpg,jpeg,png|max:2048',
             ]);
 
             \Log::info('Validated data:', $validatedData);

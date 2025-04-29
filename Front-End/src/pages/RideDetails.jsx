@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import Loader from "../components/Loader";
 import Button from "../components/Button";
 import { getTrajetById } from "../services/trajets";
+import { createReservation } from "../services/reservations";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -102,14 +103,57 @@ const RideDetails = () => {
     fetchRideDetails();
   }, [id]);
 
-  const handleBooking = (e) => {
+  const handleBooking = async (e) => {
     e.preventDefault();
     if (!user) {
       toast.info("Vous devez être connecté pour réserver un trajet");
-      navigate('/login', { state: { from: `/ride/${id}` } });
+      navigate('/login');
       return;
     }
-    navigate(`/reservation/${id}?seats=${seats}`);
+    
+    if (user.role !== 'passager') {
+      toast.error("Vous devez avoir un compte passager pour réserver un trajet");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const reservationData = {
+        trajet_id: ride.id,
+        passager_id: user.id,
+        nombre_places: seats,
+        place_reserver: seats,
+        prix_total: ride.prix_par_place * seats,
+        status: 'en_attente',
+        date_reservation: new Date().toISOString(),
+        message: "Je souhaite réserver ce trajet"
+      };
+      
+      console.log("Creating reservation with data:", reservationData);
+      const response = await createReservation(reservationData);
+      
+      if (response.data) {
+        toast.success("Réservation créée avec succès!");
+        navigate('/Myreservations');
+      }
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Votre session a expiré. Veuillez vous reconnecter.");
+        navigate('/login');
+      } else if (error.response?.status === 403) {
+        toast.error("Vous n'avez pas les permissions nécessaires pour effectuer cette action.");
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || "Données de réservation invalides.");
+      } else if (error.response?.status === 409) {
+        toast.error("Vous avez déjà une réservation pour ce trajet ou les places ne sont plus disponibles.");
+      } else {
+        toast.error(error.response?.data?.message || "Erreur lors de la création de la réservation");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDateTime = (dateTimeString) => {
