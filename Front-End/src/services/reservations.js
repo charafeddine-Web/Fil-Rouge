@@ -35,7 +35,8 @@ export const createReservation = (reservationData) => {
   return api.post('/reservations', reservationData);
 };
 
-export const cancelReservation = (reservationId) => api.delete(`/reservations/${reservationId}`, { status: 'annulee' });
+export const cancelReservation = (reservationId) =>  api.patch(`/reservations/${reservationId}/cancel`, { status: 'annulee' });
+// export const cancelReservation = (reservationId) => api.delete(`/reservations/${reservationId}`, { status: 'annulee' });
 
 // export const getReservationsByUserId = () => api.get(`/passager/reservations`);
 

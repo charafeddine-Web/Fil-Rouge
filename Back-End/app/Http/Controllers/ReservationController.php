@@ -119,6 +119,53 @@ class ReservationController extends Controller
         return response()->json(['message' => 'Reservation deleted successfully']);
     }
 
+    public function cancel(int $id): JsonResponse
+    {
+        // Get the reservation
+        $reservation = $this->reservationService->getReservationById($id);
+
+        if (!$reservation) {
+            return response()->json(['message' => 'Reservation not found'], 404);
+        }
+
+        // Get the trajet
+        $trajet = $reservation->trajet;
+
+        if (!$trajet) {
+            return response()->json(['message' => 'Trajet not found for this reservation'], 404);
+        }
+
+        try {
+            // Begin transaction to ensure data consistency
+            \DB::beginTransaction();
+
+            // Update reservation status to canceled
+            $reservation->status = 'annulee';
+            $reservation->updated_at = now();
+            $reservation->save();
+
+            // Update the trajet's available seats by adding back the reserved seats
+            $trajet->nombre_places += $reservation->places_reservees;
+            $trajet->save();
+
+            \DB::commit();
+
+            return response()->json([
+                'message' => 'Reservation canceled successfully',
+                'reservation' => $reservation,
+                'trajet' => $trajet
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error canceling reservation: ' . $e->getMessage(), [
+                'reservation_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['message' => 'Failed to cancel reservation: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function getConducteurReservations()
     {
         $conducteurId = auth()->user()->conducteur->id;

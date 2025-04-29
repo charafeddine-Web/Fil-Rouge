@@ -5,7 +5,7 @@ import Header from "../../components/Header";
 import Loader from "../../components/Loader";
 import { getTrajetsByDriverId} from "../../services/trajets";
 import {getConducteurByUserId} from "../../services/conducteur";
-import { getReservationsByDriverId, approveReservation, rejectReservation } from "../../services/reservations";
+import { getReservationsByDriverId, approveReservation, cancelReservation } from "../../services/reservations";
 import RideItem from './RideItem';
 import ReservationItem from './ReservationItem';
 import { toast } from "react-toastify";
@@ -180,7 +180,7 @@ const DriverDashboard = ({user}) => {
       setReservationLoading(true);
       console.log("Rejecting reservation ID:", reservationId);
       
-      const response = await rejectReservation(reservationId);
+      const response = await cancelReservation(reservationId);
       console.log("Rejection response:", response);
       
       // Refresh all data after rejection

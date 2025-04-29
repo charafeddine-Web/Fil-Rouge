@@ -27,8 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:passager')->group(function () {
 //        Route::get('/reservations/{user_id}', [ReservationController::class, 'update']);
         Route::post('/reservations', [ReservationController::class, 'store']);
-        Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
-        Route::patch('/reservations/{id}', [ReservationController::class, 'update']);
+//        Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
         Route::get('/reservations/{id}', [ReservationController::class, 'getPassageReservations']);
 
 //        Route::apiResource('reservations', ReservationController::class);
@@ -49,7 +48,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/trajets/{id}/termine', [TrajetController::class, 'termine']);
         Route::get('/conducteur/reservations', [ReservationController::class, 'getConducteurReservations']);
         // Routes pour permettre aux conducteurs d'approuver ou rejeter des réservations
-        Route::patch('/reservations/{id}', [ReservationController::class, 'update']);
     });
 
     // Routes pour les administrateurs
@@ -85,6 +83,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Routes communes
+    Route::patch('/reservations/{id}', [ReservationController::class, 'update']);
+    Route::patch('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
+
     Route::post('/messages', [MessageController::class, 'send']);
     Route::apiResource('avis', AvisController::class);
     Route::get('/users', [UserController::class, 'index']);
