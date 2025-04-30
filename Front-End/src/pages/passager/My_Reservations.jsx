@@ -123,17 +123,13 @@ const MyReservations = () => {
 
   const handleRateRide = async (reservationId, note_moyenne, commentaire) => {
     try {
-      // Call the API to save the review
       const response = await submitDriverReview(reservationId, note_moyenne, commentaire);
       toast.success("Review submitted successfully");
       
-      // Find the reservation to update in our state
       const reservation = reservations.past.find(res => res.id === reservationId);
       const conducteurId = reservation?.trajet?.conducteur?.id;
       
-      // Update both the reservation and driver rating in our state
       const updatedPast = reservations.past.map(res => {
-        // Update this reservation to show it's been rated
         if (res.id === reservationId) {
           return {
             ...res,
@@ -143,7 +139,6 @@ const MyReservations = () => {
           };
         }
         
-        // If we have a driver ID and this reservation has the same driver, update their average rating
         if (conducteurId && res.trajet?.conducteur?.id === conducteurId) {
           return {
             ...res,

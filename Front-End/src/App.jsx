@@ -17,7 +17,9 @@ import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
 import SearchRides from './pages/SearchRides';
 import RideDetails from './pages/RideDetails';
-import HowItWorks from './pages/HowItWorks'
+import HowItWorks from './pages/HowItWorks';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
 // import ChatPage from './pages/ChatPage';
 
@@ -72,6 +74,8 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/ride/:id" element={<RideDetails />} />
         </Route>
 
