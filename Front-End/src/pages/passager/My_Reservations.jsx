@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import Loader from "../../components/Loader";
 import Button from "../../components/Button";
-import { getReservationsByUserId, cancelReservation } from "../../services/reservationService";
+import { getReservationsByUserId, cancelReservation, submitDriverReview } from "../../services/reservations";
 import { AuthContext } from "../../context/AuthContext";
 import { useContext } from "react";
 
@@ -17,6 +18,11 @@ const MyReservations = () => {
     past: [],
     canceled: []
   });
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [selectedReservationId, setSelectedReservationId] = useState(null);
+  
   const { user, loadingUser } = useContext(AuthContext);
   
   useEffect(() => {
@@ -27,20 +33,12 @@ const MyReservations = () => {
         setLoading(true);
         const response = await getReservationsByUserId(user.id);
         const allReservations = response.data;
-        console.log('Raw reservations data:', allReservations);
-        if (allReservations.length > 0) {
-          console.log('First reservation structure:', allReservations[0]);
-        }
 
         // Categorize reservations based on status
         const categorizedReservations = {
-          upcoming: allReservations.filter(res => {
-            console.log('Processing reservation:', res);
-            console.log('Status:', res.status);
-            console.log('Trajet:', res.trajet);
-            console.log('Trajets:', res.trajets);
-            return ['en_attente'].includes(res.status);
-          }),
+          upcoming: allReservations.filter(res => 
+            ['en_attente'].includes(res.status)
+          ),
           past: allReservations.filter(res => 
             ['confirmee'].includes(res.status)
           ),
@@ -52,6 +50,7 @@ const MyReservations = () => {
         setReservations(categorizedReservations);
       } catch (error) {
         console.error("Error fetching reservations:", error);
+        toast.error("Failed to load your reservations");
       } finally {
         setLoading(false);
       }
@@ -97,6 +96,8 @@ const MyReservations = () => {
     if (window.confirm("Are you sure you want to cancel this reservation? Cancellation policy may apply.")) {
       try {
         await cancelReservation(reservationId);
+        toast.success("Reservation cancelled successfully");
+        
         // Refresh the reservations list
         const response = await getReservationsByUserId(user.id);
         const allReservations = response.data;
@@ -115,69 +116,168 @@ const MyReservations = () => {
         setReservations(categorizedReservations);
       } catch (error) {
         console.error("Error canceling reservation:", error);
+        toast.error("Failed to cancel reservation. Please try again.");
       }
     }
   };
 
-  const handleRateRide = (reservationId, note_moyenne) => {
-    console.log(`Rating reservation ${reservationId} with ${note_moyenne} stars`);
-    
-    const updatedPast = reservations.past.map(res => {
-      if (res.id === reservationId) {
-        return {
-          ...res,
-          userRated: true,
-          userRating: note_moyenne
-        };
+  const handleRateRide = async (reservationId, note_moyenne, commentaire) => {
+    try {
+      // Call the API to save the review
+      const response = await submitDriverReview(reservationId, note_moyenne, commentaire);
+      toast.success("Review submitted successfully");
+      
+      // Find the reservation to update in our state
+      const reservation = reservations.past.find(res => res.id === reservationId);
+      const conducteurId = reservation?.trajet?.conducteur?.id;
+      
+      // Update both the reservation and driver rating in our state
+      const updatedPast = reservations.past.map(res => {
+        // Update this reservation to show it's been rated
+        if (res.id === reservationId) {
+          return {
+            ...res,
+            userRated: true,
+            userRating: note_moyenne,
+            userComment: commentaire
+          };
+        }
+        
+        // If we have a driver ID and this reservation has the same driver, update their average rating
+        if (conducteurId && res.trajet?.conducteur?.id === conducteurId) {
+          return {
+            ...res,
+            trajet: {
+              ...res.trajet,
+              conducteur: {
+                ...res.trajet.conducteur,
+                note_moyenne: response.data.new_average || res.trajet.conducteur.note_moyenne
+              }
+            }
+          };
+        }
+        
+        return res;
+      });
+      
+      setReservations({
+        ...reservations,
+        past: updatedPast
+      });
+
+      // Reset rating form
+      setRating(0);
+      setComment("");
+      setSelectedReservationId(null);
+    } catch (error) {
+      console.error("Error rating driver:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Failed to submit review. Please try again.");
       }
-      return res;
-    });
-    
-    setReservations({
-      ...reservations,
-      past: updatedPast
-    });
+    }
   };
 
   const renderRating = (reservation) => {
-    if (!reservation.userRated) {
+    if (reservation.status === "confirmee" && !reservation.userRated && !reservation.avis) {
       return (
-        <div className="mt-4">
-          <p className="text-sm text-gray-600 mb-2">Rate your experience:</p>
-          <div className="flex space-x-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => handleRateRide(reservation.id, star)}
-                className="text-gray-300 hover:text-yellow-400 focus:outline-none transition-colors"
-              >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
-              </button>
-            ))}
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-md font-semibold text-gray-800 mb-2">Rate your experience with the driver</h3>
+          
+          <div className="flex items-center mb-3">
+            <p className="text-sm text-gray-600 mr-2">Your rating:</p>
+            <div className="flex space-x-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => {
+                    setRating(star);
+                    setSelectedReservationId(reservation.id);
+                  }}
+                  onMouseEnter={() => setHoveredStar(star)}
+                  onMouseLeave={() => setHoveredStar(0)}
+                  className="focus:outline-none transition-colors"
+                >
+                  <svg 
+                    className={`w-6 h-6 ${
+                      star <= (hoveredStar || (selectedReservationId === reservation.id ? rating : 0)) 
+                        ? "text-yellow-400" 
+                        : "text-gray-300"
+                    }`} 
+                    fill="currentColor" 
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                </button>
+              ))}
+            </div>
           </div>
+          
+          <div className="mb-3">
+            <label htmlFor="comment" className="block text-sm text-gray-600 mb-1">
+              Leave a comment (optional):
+            </label>
+            <textarea
+              id="comment"
+              rows="3"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              placeholder="How was your experience with the driver?"
+              value={selectedReservationId === reservation.id ? comment : ""}
+              onChange={(e) => {
+                setComment(e.target.value);
+                setSelectedReservationId(reservation.id);
+              }}
+            ></textarea>
+          </div>
+          
+          <button
+            disabled={selectedReservationId !== reservation.id || rating === 0}
+            onClick={() => handleRateRide(reservation.id, rating, comment)}
+            className={`px-4 py-2 rounded-md text-white font-medium ${
+              selectedReservationId === reservation.id && rating > 0 
+                ? "bg-green-600 hover:bg-green-700" 
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Submit Review
+          </button>
         </div>
       );
-    } else {
+    } else if (reservation.userRated || reservation.avis) {
+      const reviewData = reservation.userRated 
+        ? { note: reservation.userRating, commentaire: reservation.userComment }
+        : reservation.avis;
+        
       return (
-        <div className="mt-4">
-          <p className="text-sm text-gray-600 mb-1">Your rating:</p>
-          <div className="flex space-x-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <svg 
-                key={star}
-                className={`w-5 h-5 ${star <= reservation.userRating ? "text-yellow-400" : "text-gray-300"}`} 
-                fill="currentColor" 
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-              </svg>
-            ))}
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-md font-semibold text-gray-800 mb-2">Your review</h3>
+          <div className="flex items-center mb-2">
+            <p className="text-sm text-gray-600 mr-2">Your rating:</p>
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <svg 
+                  key={star}
+                  className={`w-5 h-5 ${star <= (reviewData?.note || 0) ? "text-yellow-400" : "text-gray-300"}`} 
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>
+              ))}
+            </div>
           </div>
+          {reviewData?.commentaire && (
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Your comment:</p>
+              <p className="text-sm text-gray-800 italic">{reviewData.commentaire}</p>
+            </div>
+          )}
         </div>
       );
     }
+    return null;
   };
 
   const getStatusBadge = (status) => {
@@ -222,7 +322,6 @@ const MyReservations = () => {
       <div className="container mx-auto px-4 py-8 flex-grow max-w-5xl">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">My Reservations</h1>
         
-        {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-8">
           <button
             className={`px-6 py-3 font-medium text-sm focus:outline-none ${
@@ -256,7 +355,6 @@ const MyReservations = () => {
           </button>
         </div>
         
-        {/* Empty State */}
         {reservations[activeTab].length === 0 && (
           <div className="bg-white rounded-xl shadow-md p-8 text-center">
             <svg
@@ -289,7 +387,6 @@ const MyReservations = () => {
           </div>
         )}
         
-        {/* Reservation Cards */}
         <div className="space-y-6">
           {reservations[activeTab].map((reservation, index) => {
             const trajet = reservation.trajet || {};
@@ -307,7 +404,6 @@ const MyReservations = () => {
                 className="bg-white rounded-xl shadow-md overflow-hidden"
               >
                 <div className="p-6">
-                  {/* Reservation Header */}
                   <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
                     <div className="flex items-center">
                       <div className="mr-4">
@@ -330,9 +426,7 @@ const MyReservations = () => {
                     </div>
                   </div>
                   
-                  {/* Reservation Details */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Left Column - Trip Details */}
                     <div className="md:col-span-2">
                       <div className="flex items-start mb-6">
                         <div className="min-w-8 mr-4">
@@ -393,22 +487,18 @@ const MyReservations = () => {
                       <div className="mb-4">
                         <p className="font-medium text-gray-700 mb-1">Price Details</p>
                         
-                        {/* Price per seat */}
                         <div className="flex justify-between items-center mb-1">
                           <p className="text-sm text-gray-600">Price per seat:</p>
                           <p className="text-sm font-semibold">${trajet.prix_par_place || "N/A"}</p>
                         </div>
                         
-                        {/* Number of seats */}
                         <div className="flex justify-between items-center mb-1">
                           <p className="text-sm text-gray-600">Seats reserved:</p>
                           <p className="text-sm font-semibold">{reservation.places_reservees || 1}</p>
                         </div>
                         
-                        {/* Divider */}
                         <div className="border-t border-gray-200 my-2"></div>
                         
-                        {/* Total price */}
                         <div className="flex justify-between items-center">
                           <p className="text-md font-medium text-gray-800">Total:</p>
                           <p className="text-2xl font-bold text-green-600">
@@ -432,10 +522,9 @@ const MyReservations = () => {
                         </div>
                       )}
                       
-                      {reservation.status === "terminee" && renderRating(reservation)}
+                      {activeTab === "past" && renderRating(reservation)}
                     </div>
                     
-                    {/* Right Column - Driver & Actions */}
                     <div className="border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
                       <p className="font-medium text-gray-600 mb-3">Driver</p>
                       {trajet.conducteur ? (
@@ -475,7 +564,7 @@ const MyReservations = () => {
                                   </svg>
                                 ))}
                                 <span className="ml-1 text-xs text-gray-600">
-                                  {trajet.conducteur.note_moyenne}
+                                  {trajet.conducteur.note}
                                 </span>
                               </div>
                             )}
@@ -485,7 +574,6 @@ const MyReservations = () => {
                         <p className="text-gray-500 mb-4">Driver information not available</p>
                       )}
                       
-                      {/* Action Buttons */}
                       <div className="space-y-2">
                         <Link to={`/ride/${trajet.id}`} className="block">
                           <Button className="w-full">View Ride Details</Button>
@@ -519,7 +607,6 @@ const MyReservations = () => {
           })}
         </div>
         
-        {/* Find More Rides Button */}
         {activeTab === "upcoming" && reservations.upcoming.length > 0 && (
           <div className="mt-8 text-center">
             <Link to="/search">

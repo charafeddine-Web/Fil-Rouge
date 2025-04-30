@@ -25,10 +25,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Routes pour les passagers
     Route::middleware('role:passager')->group(function () {
-//        Route::get('/reservations/{user_id}', [ReservationController::class, 'update']);
         Route::post('/reservations', [ReservationController::class, 'store']);
-//        Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
         Route::get('/reservations/{id}', [ReservationController::class, 'getPassageReservations']);
+        Route::apiResource('avis', AvisController::class);
 
 //        Route::apiResource('reservations', ReservationController::class);
         Route::get('/Myreservations', [ReservationController::class, 'myReservations']);
@@ -47,7 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/trajets/{id}/en_cours', [TrajetController::class, 'en_cours']);
         Route::patch('/trajets/{id}/termine', [TrajetController::class, 'termine']);
         Route::get('/conducteur/reservations', [ReservationController::class, 'getConducteurReservations']);
-        // Routes pour permettre aux conducteurs d'approuver ou rejeter des réservations
     });
 
     // Routes pour les administrateurs
@@ -87,7 +85,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
 
     Route::post('/messages', [MessageController::class, 'send']);
-    Route::apiResource('avis', AvisController::class);
     Route::get('/users', [UserController::class, 'index']);
 
     // Chat routes
@@ -100,4 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{id}', [UserController::class, 'show']);
 
     Route::get('/conducteur/user/{id}', [ConducteurController::class, 'getByUserId']);
+
+    // Routes for reviews
+//    Route::get('/avis/reservation/{reservationId}', [AvisController::class, 'getReviewByReservation']);
 });

@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 
 // export const getReservationsByTrajetId = (trajetId) => api.get(`/reservations?trajet_id=${trajetId}`);
 
@@ -20,11 +21,11 @@ export const rejectReservation = (reservationId) => {
   
   const requestData = { status: 'annulee' };
   console.log(`Making reject reservation request to /reservations/${reservationId}`, requestData);
-  
   return api.patch(`/reservations/${reservationId}`, requestData);
 };
 
-export const getReservationsByDriverId = () => api.get(`/conducteur/reservations`);
+// export const getReservationsByDriverId = () => api.get(`/conducteur/reservations`);
+export const getReservationsByDriverId = (driverId) => api.get(`/reservations?conducteur_id=${driverId}`);
 
 export const getReservationsByTrajetId = (trajetId) => api.get(`/reservations?trajet_id=${trajetId}`);
 
@@ -40,7 +41,23 @@ export const cancelReservation = (reservationId) =>  api.patch(`/reservations/${
 
 // export const getReservationsByUserId = () => api.get(`/passager/reservations`);
 
+// export const getReservationsByUserId = (userId) => api.get(`/reservations/${userId}`);
 export const getReservationsByUserId = (userId) => api.get(`/reservations/${userId}`);
+
+// Add this new function to submit a review
+export const submitDriverReview = async (reservationId, note, commentaire) => {
+  try {
+    const response = await api.post('/avis', {
+      reservation_id: reservationId,
+      note: note,
+      commentaire: commentaire
+    });
+    return response;
+  } catch (error) {
+    console.error('Error submitting review:', error);
+    throw error;
+  }
+};
 
 
 
