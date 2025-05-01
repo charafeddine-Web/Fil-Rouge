@@ -52,15 +52,7 @@ class ReservationRepository implements ReservationInterface
 //            })
 //            ->get();
 //    }
-    public function getReservationsByUserId(int $userId)
-    {
-        return Reservation::with('trajet')
-            ->where('user_id', $userId) // passager
-            ->orWhereHas('trajet', function ($query) use ($userId) {
-                $query->where('conducteur_id', $userId); // conducteur
-            })
-            ->get();
-    }
+
 
 
 }

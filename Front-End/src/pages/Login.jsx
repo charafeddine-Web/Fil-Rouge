@@ -31,10 +31,11 @@ const Login = () => {
       setToken(token);
       toast.success("Login réussie !");
       const userResponse = await getCurrentUser();
+      const user = userResponse.data;
+      localStorage.setItem("user", JSON.stringify(user));
       setUser(userResponse.data);
-      // const role = userResponse.data.role;
       const redirectUser = (role) => {
-        if (role === "admin") navigate('/admin/dashboard');
+        if (role === "admin") navigate('/admin/overview');
         else if (role === "conducteur") navigate('/dashboard');
         else navigate('/offer-ride');
       };

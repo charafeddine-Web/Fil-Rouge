@@ -17,16 +17,18 @@ import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
 import SearchRides from './pages/SearchRides';
 import RideDetails from './pages/RideDetails';
-import HowItWorks from './pages/HowItWorks'
+import HowItWorks from './pages/HowItWorks';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
-import ChatPage from './pages/ChatPage';
+// import ChatPage from './pages/ChatPage';
 
 // Pages utilisateur
 // import OfferRide from './pages/OfferRide';
 import MyRides from './pages/conductuer/MyRides';
 import Reservations from './pages/conductuer/Reservations';
 import Profile from './pages/Profile';
-import EditProfile from './pages/EditProfile';
+// import EditProfile from './pages/EditProfile';
 import My_Reservations from './pages/passager/My_Reservations';
 import Messaging from  "./pages/Messaging";
 import DriverDashboard from './pages/conductuer/DriverDashboard';
@@ -72,6 +74,8 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/ride/:id" element={<RideDetails />} />
         </Route>
 
@@ -92,9 +96,8 @@ function App() {
         {/* Routes communes pour utilisateurs authentifiés */}
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
           <Route path="/Messaging" element={<Messaging />} />
-          <Route path="/chat/:receiverId" element={<ChatPage />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/edit-profile" element={<EditProfile />} />
+          {/* <Route path="/edit-profile" element={<EditProfile />} /> */}
         </Route>
 
         {/* Routes pour les administrateurs */}

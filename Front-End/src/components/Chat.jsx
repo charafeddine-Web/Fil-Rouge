@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 const Chat = ({ receiverId, receiverName }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const { user } = useAuth();
+    const { user } = useContext(AuthContext);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {

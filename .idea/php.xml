@@ -129,6 +129,8 @@
       <path value="$PROJECT_DIR$/Back-End/vendor/symfony/mime" />
       <path value="$PROJECT_DIR$/Back-End/vendor/symfony/http-foundation" />
       <path value="$PROJECT_DIR$/Back-End/vendor/symfony/http-kernel" />
+      <path value="$PROJECT_DIR$/Back-End/vendor/pusher/pusher-php-server" />
+      <path value="$PROJECT_DIR$/Back-End/vendor/paragonie/sodium_compat" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />

@@ -5,9 +5,10 @@ import Header from "../../components/Header";
 import Loader from "../../components/Loader";
 import { getTrajetsByDriverId} from "../../services/trajets";
 import {getConducteurByUserId} from "../../services/conducteur";
-import { getReservationsByDriverId, approveReservation, rejectReservation } from "../../services/reservations";
+import { getReservationsByDriverId, approveReservation, cancelReservation } from "../../services/reservations";
 import RideItem from './RideItem';
 import ReservationItem from './ReservationItem';
+import { toast } from "react-toastify";
 
 const DriverDashboard = ({user}) => {
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ const DriverDashboard = ({user}) => {
         
         let reservationsData = [];
         try {
-          const reservationsRes = await getReservationsByDriverId(conducteurId);
+          const reservationsRes = await getReservationsByDriverId();
           reservationsData = reservationsRes.data;
           console.log('reservationdta ',reservationsData)
 
@@ -122,16 +123,20 @@ const DriverDashboard = ({user}) => {
   const handleApproveReservation = async (reservationId) => {
     try {
       setReservationLoading(true);
-      await approveReservation(reservationId);
+      console.log("Approving reservation ID:", reservationId);
+      
+      const response = await approveReservation(reservationId);
+      console.log("Approval response:", response);
+      
       // Refresh all data after approval
       const conducteurRes = await getConducteurByUserId(user.id);
       const conducteurId = conducteurRes.data.id;
-      const response = await getTrajetsByDriverId(conducteurId);
+      const response2 = await getTrajetsByDriverId(conducteurId);
       const reservationsRes = await getReservationsByDriverId(conducteurId);
       
       setDriverData(prevData => ({
         ...prevData,
-        upcomingRides: response.data
+        upcomingRides: response2.data
           .filter(ride => ride.statut === 'planifié' || ride.statut === 'en_cours')
           .map(ride => ({
             id: ride.id,
@@ -155,8 +160,16 @@ const DriverDashboard = ({user}) => {
           }))
       }));
       setReservations(reservationsRes.data);
+      
+      toast.success("Reservation confirmed successfully!");
     } catch (error) {
       console.error("Error approving reservation:", error);
+      
+      if (error.response?.status === 403) {
+        toast.error("You are not authorized to confirm this reservation.");
+      } else {
+        toast.error("Error confirming the reservation.");
+      }
     } finally {
       setReservationLoading(false);
     }
@@ -165,16 +178,20 @@ const DriverDashboard = ({user}) => {
   const handleRejectReservation = async (reservationId) => {
     try {
       setReservationLoading(true);
-      await rejectReservation(reservationId);
+      console.log("Rejecting reservation ID:", reservationId);
+      
+      const response = await cancelReservation(reservationId);
+      console.log("Rejection response:", response);
+      
       // Refresh all data after rejection
       const conducteurRes = await getConducteurByUserId(user.id);
       const conducteurId = conducteurRes.data.id;
-      const response = await getTrajetsByDriverId(conducteurId);
+      const response2 = await getTrajetsByDriverId(conducteurId);
       const reservationsRes = await getReservationsByDriverId(conducteurId);
       
       setDriverData(prevData => ({
         ...prevData,
-        upcomingRides: response.data
+        upcomingRides: response2.data
           .filter(ride => ride.statut === 'planifié' || ride.statut === 'en_cours')
           .map(ride => ({
             id: ride.id,
@@ -198,8 +215,16 @@ const DriverDashboard = ({user}) => {
           }))
       }));
       setReservations(reservationsRes.data);
+      
+      toast.success("Reservation rejected successfully!");
     } catch (error) {
       console.error("Error rejecting reservation:", error);
+      
+      if (error.response?.status === 403) {
+        toast.error("You are not authorized to reject this reservation.");
+      } else {
+        toast.error("Error rejecting the reservation.");
+      }
     } finally {
       setReservationLoading(false);
     }

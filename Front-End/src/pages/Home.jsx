@@ -13,7 +13,6 @@ const Home = () => {
   const [date, setDate] = useState("");
 
   useEffect(() => {
-    // Simulate loading data
     const timer = setTimeout(() => {
       setLoading(false);
     }, 800);

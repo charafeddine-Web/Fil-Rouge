@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\ReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\Reservation;
 
 class ReservationController extends Controller
 {
@@ -56,6 +57,40 @@ class ReservationController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        \Log::info('Updating reservation', ['reservation_id' => $id]);
+
+        // Get the reservation
+        $reservation = $this->reservationService->getReservationById($id);
+
+        if (!$reservation) {
+            \Log::warning('Reservation not found', ['id' => $id]);
+            return response()->json(['message' => 'Reservation not found'], 404);
+        }
+
+        // Security check: a conductor can only update reservations for their own rides
+        $user = auth()->user();
+
+        if ($user->role === 'conducteur') {
+            // Get the conductor ID
+            $conducteurId = $user->conducteur->id ?? null;
+
+            if (!$conducteurId) {
+                \Log::warning('User has conducteur role but no conducteur record', ['user_id' => $user->id]);
+                return response()->json(['message' => 'Conducteur record not found'], 403);
+            }
+
+            // Check if the reservation is for a ride owned by this conductor
+            $trajetConducteurId = $reservation->trajet->conducteur_id ?? null;
+
+            if ($trajetConducteurId !== $conducteurId) {
+                \Log::warning('Permission denied - conductor does not own this ride', [
+                    'trajet_conducteur_id' => $trajetConducteurId,
+                    'user_conducteur_id' => $conducteurId
+                ]);
+                return response()->json(['message' => 'You are not authorized to update this reservation'], 403);
+            }
+        }
+
         $validated = $request->validate([
             'status' => 'sometimes|in:en_attente,confirmee,annulee',
             'date_reservation' => 'sometimes|date',
@@ -64,10 +99,14 @@ class ReservationController extends Controller
             'places_reservees' => 'sometimes|integer|min:1',
             'prix_total' => 'sometimes|numeric|min:0'
         ]);
+
         $updated = $this->reservationService->updateReservation($id, $validated);
         if (!$updated) {
-            return response()->json(['message' => 'Reservation not found or update failed'], 404);
+            \Log::error('Reservation update failed', ['id' => $id]);
+            return response()->json(['message' => 'Reservation update failed'], 500);
         }
+
+        \Log::info('Reservation updated successfully', ['id' => $id]);
         return response()->json(['message' => 'Reservation updated successfully']);
     }
 
@@ -79,4 +118,77 @@ class ReservationController extends Controller
         }
         return response()->json(['message' => 'Reservation deleted successfully']);
     }
+
+    public function cancel(int $id): JsonResponse
+    {
+        // Get the reservation
+        $reservation = $this->reservationService->getReservationById($id);
+
+        if (!$reservation) {
+            return response()->json(['message' => 'Reservation not found'], 404);
+        }
+
+        // Get the trajet
+        $trajet = $reservation->trajet;
+
+        if (!$trajet) {
+            return response()->json(['message' => 'Trajet not found for this reservation'], 404);
+        }
+
+        try {
+            // Begin transaction to ensure data consistency
+            \DB::beginTransaction();
+
+            // Update reservation status to canceled
+            $reservation->status = 'annulee';
+            $reservation->updated_at = now();
+            $reservation->save();
+
+            // Update the trajet's available seats by adding back the reserved seats
+            $trajet->nombre_places += $reservation->places_reservees;
+            $trajet->save();
+
+            \DB::commit();
+
+            return response()->json([
+                'message' => 'Reservation canceled successfully',
+                'reservation' => $reservation,
+                'trajet' => $trajet
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error canceling reservation: ' . $e->getMessage(), [
+                'reservation_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['message' => 'Failed to cancel reservation: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getConducteurReservations()
+    {
+        $conducteurId = auth()->user()->conducteur->id;
+        $reservations = Reservation::whereHas('trajet', function($query) use ($conducteurId) {
+            $query->where('conducteur_id', $conducteurId);
+        })
+        ->with(['trajet', 'passager'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return response()->json($reservations);
+    }
+
+    public function getPassageReservations($id)
+    {
+        $reservations = Reservation::whereHas('trajet', function($query) use ($id) {
+            $query->where('passager_id', $id);
+        })
+            ->with(['trajet','trajet.conducteur','trajet.conducteur.user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($reservations);
+    }
+
 }

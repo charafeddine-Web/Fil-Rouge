@@ -53,7 +53,22 @@ class User extends Authenticatable
 
     public function messagesEnvoyes()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function messagesRecus()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    public function conducteur()
+    {
+        return $this->hasOne(Conducteur::class);
+    }
+
+    public function passager()
+    {
+        return $this->hasOne(Passager::class);
     }
 
     /**

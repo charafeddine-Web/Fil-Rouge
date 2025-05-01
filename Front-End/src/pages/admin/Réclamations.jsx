@@ -1,4 +1,5 @@
 
+import Loader from "../../components/Loader";
 
 // Composant section Réclamations
 export default function ClaimsSection({ recentClaims }) {

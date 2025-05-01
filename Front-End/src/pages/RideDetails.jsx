@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import Loader from "../components/Loader";
 import Button from "../components/Button";
 import { getTrajetById } from "../services/trajets";
+import { createReservation } from "../services/reservations";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -102,14 +103,80 @@ const RideDetails = () => {
     fetchRideDetails();
   }, [id]);
 
-  const handleBooking = (e) => {
+  const handleBooking = async (e) => {
     e.preventDefault();
     if (!user) {
-      toast.info("Vous devez être connecté pour réserver un trajet");
-      navigate('/login', { state: { from: `/ride/${id}` } });
+      toast.info("You must be logged in to book a ride");
+      navigate('/login');
       return;
     }
-    navigate(`/reservation/${id}?seats=${seats}`);
+    
+    if (user.role !== 'passager') {
+      toast.error("You must have a passenger account to book a ride");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const reservationData = {
+        trajet_id: ride.id,
+        passager_id: user.id,
+        nombre_places: seats,
+        places_reservees: seats,
+        prix_total: ride.prix_par_place * seats,
+        status: 'en_attente',
+        date_reservation: new Date().toISOString(),
+        message: "I would like to book this ride"
+      };
+      
+      console.log("Creating reservation with data:", reservationData);
+      const response = await createReservation(reservationData);
+      
+      if (response.data) {
+        toast.success("Reservation created successfully!");
+        
+        // Refresh ride details to update available seats
+        try {
+          const updatedRideResponse = await getTrajetById(id);
+          if (updatedRideResponse.data) {
+            const rideData = updatedRideResponse.data;
+            setRide(prevRide => ({
+              ...prevRide,
+              availableSeats: rideData.nombre_places
+            }));
+          }
+        } catch (refreshError) {
+          console.error("Error refreshing ride details:", refreshError);
+        }
+        
+        navigate('/Myreservations');
+      }
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Your session has expired. Please login again.");
+        navigate('/login');
+      } else if (error.response?.status === 403) {
+        toast.error("You don't have permission to perform this action.");
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || "Invalid reservation data.");
+      } else if (error.response?.status === 409) {
+        toast.error("You already have a reservation for this trip or no seats are available.");
+      } else if (error.response?.data?.message && error.response.data.message.includes("places disponibles")) {
+        // Specific error for no available seats
+        toast.error("Sorry, all seats for this trip are booked.");
+        // Disable the booking button and update UI
+        setRide(prevRide => ({
+          ...prevRide,
+          availableSeats: 0
+        }));
+      } else {
+        toast.error(error.response?.data?.message || "Error creating reservation");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDateTime = (dateTimeString) => {
@@ -337,13 +404,13 @@ const RideDetails = () => {
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     {ride.price} MAD
                   </h2>
-                  <p className="text-gray-600">par place</p>
+                  <p className="text-gray-600">per seat</p>
                 </div>
 
                 <form onSubmit={handleBooking}>
                   <div className="mb-6">
                     <label htmlFor="seats" className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de places
+                      Number of seats
                     </label>
                     <select
                       id="seats"
@@ -353,26 +420,35 @@ const RideDetails = () => {
                     >
                       {[...Array(ride.availableSeats)].map((_, i) => (
                         <option key={i + 1} value={i + 1}>
-                          {i + 1} {i === 0 ? 'place' : 'places'}
+                          {i + 1} {i === 0 ? 'seat' : 'seats'}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-sm text-gray-600 mb-2">Prix total</p>
                     <p className="text-2xl font-bold text-gray-800">
                       {ride.price * seats} MAD
                     </p>
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    Réserver
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={ride.availableSeats <= 0}
+                  >
+                    {ride.availableSeats > 0 ? 'Book' : 'Full'}
                   </Button>
                 </form>
 
+                {ride.availableSeats <= 0 && (
+                  <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md text-center">
+                    This ride is full. All seats are booked.
+                  </div>
+                )}
+
                 <div className="mt-6 text-sm text-gray-600">
-                  <p className="mb-2">Politique d'annulation:</p>
+                  <p className="mb-2">Cancellation Policy:</p>
                   <p>{ride.cancellationPolicy}</p>
                 </div>
               </div>

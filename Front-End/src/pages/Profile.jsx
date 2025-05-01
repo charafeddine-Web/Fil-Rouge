@@ -6,7 +6,8 @@ import Footer from "../components/Footer";
 import Button from "../components/Button";
 import Loader from "../components/Loader";
 import { getCurrentUser, updateProfile } from "../services/auth";
-import { getConducteurByUserId } from "../services/conducteur";
+import { getConducteurByUserId, updateConducteur } from "../services/conducteur";
+import useFileUpload from "../hooks/useFileUpload";
 import { toast } from "react-toastify";
 
 const Profile = () => {
@@ -17,20 +18,26 @@ const Profile = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [driverInfo, setDriverInfo] = useState(null);
   
-  // User profile state
+  // Use the file upload hook
+  const { files, previews, handleFileChange, resetFiles, addFilesToFormData } = useFileUpload();
+  
   const [profile, setProfile] = useState({
-    firstName: "",
-    lastName: "",
+    nom: "",
+    prenom: "",
     email: "",
-    phone: "",
-    birthDate: "",
-    bio: "",
-    profileImage: null,
-    address: "",
-    city: "",
-    preferredLanguage: "english",
+    telephone: "",
+    photoDeProfil: null,
+    // Driver specific fields
+    num_permis: "",
+    disponibilite: false,
+    adresse: "",
+    ville: "",
+    date_naissance: "",
+    sexe: "",
+    photo_permis: null,
+    photo_identite: null,
     verifications: {
-      email: true,
+      email: false,
       phone: false,
       identity: false,
       drivingLicense: false
@@ -50,7 +57,7 @@ const Profile = () => {
 
         const response = await getCurrentUser(token);
         const userData = response.data;
-        
+        console.log("waaaaaaaaaaa3",userData)
         // If user is a driver, load additional driver information
         if (userData.role === 'conducteur') {
           try {
@@ -64,17 +71,20 @@ const Profile = () => {
           }
         }
         
-        // Set profile data from user response
         setProfile({
-          firstName: userData.prenom || "",
-          lastName: userData.nom || "",
+          nom: userData.nom || "",
+          prenom: userData.prenom || "",
           email: userData.email || "",
-          phone: userData.telephone || "",
-          birthDate: userData.date_naissance || "",
-          profileImage: userData.photoDeProfil || null,
-          address: userData.conducteur?.adresse || "",
-          city: userData.conducteur?.ville || "",
-      
+          telephone: userData.telephone || "",
+          photoDeProfil: userData.photoDeProfil || null,
+          num_permis: userData.conducteur?.num_permis || "",
+          disponibilite: userData.conducteur?.disponibilite || false,
+          adresse: userData.conducteur?.adresse || "",
+          ville: userData.conducteur?.ville || "",
+          date_naissance: userData.conducteur?.date_naissance || "",
+          sexe: userData.conducteur?.sexe || "",
+          photo_permis: userData.conducteur?.photo_permis || null,
+          photo_identite: userData.conducteur?.photo_identite || null,
           verifications: {
             email: userData.email_verified || false,
             phone: userData.telephone_verified || false,
@@ -83,7 +93,6 @@ const Profile = () => {
           }
         });
 
-        // Set driver info if user is a driver
         if (userData.role === 'conducteur' && userData.conducteur) {
           setDriverInfo(userData.conducteur);
         }
@@ -122,9 +131,10 @@ const Profile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const previewUrl = handleFileChange('photoDeProfil', file);
       setProfile({
         ...profile,
-        profileImage: URL.createObjectURL(file)
+        photoDeProfil: previewUrl
       });
     }
   };
@@ -140,100 +150,81 @@ const Profile = () => {
         return;
       }
 
-      // Prepare the data for the API
+      // Prepare the data for the API - create a SINGLE FormData object
       const formData = new FormData();
       
-      // Add basic user information (matching users table)
-      if (profile.firstName) formData.append('prenom', profile.firstName);
-      if (profile.lastName) formData.append('nom', profile.lastName);
-      if (profile.email) formData.append('email', profile.email);
-      if (profile.phone) formData.append('telephone', profile.phone);
+      console.log("Submitting profile update with data:", profile);
+      
+      // Add basic user information
+      formData.append('nom', profile.nom);
+      formData.append('prenom', profile.prenom);
+      formData.append('email', profile.email);
+      formData.append('telephone', profile.telephone);
 
-      // Handle profile image upload
-      if (profile.profileImage && profile.profileImage.startsWith('blob:')) {
-        try {
-          const response = await fetch(profile.profileImage);
-          const blob = await response.blob();
-          formData.append('photoDeProfil', blob, 'profile-image.jpg');
-        } catch (error) {
-          console.error('Error processing profile image:', error);
-        }
-      }
-
-      // If user is a driver, add driver-specific information
+      // Add driver specific information if user is a driver
       if (user?.role === 'conducteur') {
-        // Add driver information
-        if (profile.address) formData.append('adresse', profile.address);
-        if (profile.city) formData.append('ville', profile.city);
-        if (profile.birthDate) formData.append('date_naissance', profile.birthDate);
-        if (driverInfo?.num_permis) formData.append('num_permis', driverInfo.num_permis);
-        if (driverInfo?.sexe) formData.append('sexe', driverInfo.sexe);
-
-        // Handle driver's license photo
-        if (driverInfo?.photo_permis && driverInfo.photo_permis.startsWith('blob:')) {
-          try {
-            const response = await fetch(driverInfo.photo_permis);
-            const blob = await response.blob();
-            formData.append('photo_permis', blob, 'license-image.jpg');
-          } catch (error) {
-            console.error('Error processing license image:', error);
-          }
-        }
-
-        // Handle ID photo
-        if (driverInfo?.photo_identite && driverInfo.photo_identite.startsWith('blob:')) {
-          try {
-            const response = await fetch(driverInfo.photo_identite);
-            const blob = await response.blob();
-            formData.append('photo_identite', blob, 'id-image.jpg');
-          } catch (error) {
-            console.error('Error processing ID image:', error);
-          }
-        }
+        formData.append('num_permis', profile.num_permis || '');
+        formData.append('disponibilite', profile.disponibilite ? '1' : '0'); // Convert boolean to string
+        formData.append('adresse', profile.adresse || '');
+        formData.append('ville', profile.ville || '');
+        formData.append('date_naissance', profile.date_naissance || '');
+        formData.append('sexe', profile.sexe || '');
       }
 
-      // Log the FormData contents for debugging
-      console.log('FormData contents:');
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1] instanceof Blob ? 'Blob data' : pair[1]}`);
-      }
+      // Add files to form data
+      addFilesToFormData(formData);
 
-      // Log the current user data
-      console.log('Current user data:', user);
-      console.log('Current profile data:', profile);
-      if (user?.role === 'conducteur') {
-        console.log('Current driver info:', driverInfo);
-      }
+      // Log form data for debugging
+      const plainData = {};
+      formData.forEach((value, key) => {
+        plainData[key] = value instanceof File ? 'File: ' + value.name : value;
+      });
+      console.log('Data being sent:', plainData);
 
-      // Call the API to update the profile
-      console.log('Sending update request...');
+      // Use a SINGLE API call to update all profile data
       const response = await updateProfile(formData, token);
-      console.log('API Response:', response);
+      console.log('Profile update response:', response);
 
       if (response.data) {
-        console.log('Update successful, refreshing data...');
-        // Refresh user data
+        // After successful update, refresh user data
         const userResponse = await getCurrentUser(token);
         const userData = userResponse.data;
-        console.log('Refreshed user data:', userData);
+        console.log("Updated user data received:", userData);
         
-        // If user is a driver, refresh driver data
+        // If user is a driver, load additional driver information
         if (userData.role === 'conducteur') {
-          const driverResponse = await getConducteurByUserId(userData.id);
-          userData.conducteur = driverResponse.data;
-          console.log('Refreshed driver data:', driverResponse.data);
+          try {
+            const driverResponse = await getConducteurByUserId(userData.id);
+            const driverData = driverResponse.data;
+            console.log("Driver data received:", driverData);
+            
+            // Merge user data with driver data
+            userData.conducteur = driverData;
+            
+            // Update driver info state
+            setDriverInfo(driverData);
+          } catch (error) {
+            console.error("Error loading driver data:", error);
+            toast.error("Failed to load driver information");
+          }
         }
 
-        // Update the profile state with new data
+        // Update profile state with new data
         setProfile({
-          firstName: userData.prenom || "",
-          lastName: userData.nom || "",
+          nom: userData.nom || "",
+          prenom: userData.prenom || "",
           email: userData.email || "",
-          phone: userData.telephone || "",
-          birthDate: userData.conducteur?.date_naissance || "",
-          profileImage: userData.photoDeProfil || null,
-          address: userData.conducteur?.adresse || "",
-          city: userData.conducteur?.ville || "",
+          telephone: userData.telephone || "",
+          photoDeProfil: userData.photoDeProfil || null,
+          // Driver specific fields
+          num_permis: userData.conducteur?.num_permis || "",
+          disponibilite: userData.conducteur?.disponibilite || false,
+          adresse: userData.conducteur?.adresse || "",
+          ville: userData.conducteur?.ville || "",
+          date_naissance: userData.conducteur?.date_naissance || "",
+          sexe: userData.conducteur?.sexe || "",
+          photo_permis: userData.conducteur?.photo_permis || null,
+          photo_identite: userData.conducteur?.photo_identite || null,
           verifications: {
             email: userData.email_verified || false,
             phone: userData.telephone_verified || false,
@@ -241,29 +232,28 @@ const Profile = () => {
             drivingLicense: !!userData.conducteur?.photo_permis
           }
         });
+        
+        // Reset file uploads after successful update
+        resetFiles();
 
-        // Update driver info if user is a driver
-        if (userData.role === 'conducteur' && userData.conducteur) {
-          setDriverInfo(userData.conducteur);
-        }
+        // Update user context
+        setUser(userData);
+        
+        // Update user in localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
 
+        // Exit edit mode and show success message
         setIsEditing(false);
         setSaveSuccess(true);
         toast.success(response.data.message || "Profile updated successfully!");
         
-        // Reset success message after 3 seconds
         setTimeout(() => {
           setSaveSuccess(false);
         }, 3000);
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      console.error("Error details:", {
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        config: error.config
-      });
+      console.error("Error details:", error.response);
       const errorMessage = error.response?.data?.message || "Failed to update profile";
       toast.error(errorMessage);
     } finally {
@@ -319,7 +309,7 @@ const Profile = () => {
               <div className="flex items-center">
                 <div className="relative">
                   <img 
-                    src={profile.profileImage || "/api/placeholder/150/150"} 
+                    src={profile.photoDeProfil || "/api/placeholder/150/150"} 
                     alt="Profile" 
                     className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg"
                   />
@@ -338,7 +328,7 @@ const Profile = () => {
                   )}
                 </div>
                 <div className="ml-8">
-                  <h2 className="text-2xl font-bold text-white">{profile.firstName} {profile.lastName}</h2>
+                  <h2 className="text-2xl font-bold text-white">{profile.prenom} {profile.nom}</h2>
                   <p className="text-green-100 mt-1">Member since {new Date(user?.created_at).toLocaleDateString()}</p>
                   {user?.role === 'conducteur' && driverInfo && (
                     <div className="mt-3 flex items-center space-x-4">
@@ -380,14 +370,14 @@ const Profile = () => {
                       {isEditing ? (
                         <input 
                           type="text" 
-                          name="firstName" 
-                          value={profile.firstName} 
+                          name="prenom" 
+                          value={profile.prenom} 
                           onChange={handleInputChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                           required 
                         />
                       ) : (
-                        <p className="text-gray-800">{profile.firstName}</p>
+                        <p className="text-gray-800">{profile.prenom}</p>
                       )}
                     </div>
                     <div>
@@ -395,14 +385,14 @@ const Profile = () => {
                       {isEditing ? (
                         <input 
                           type="text" 
-                          name="lastName" 
-                          value={profile.lastName} 
+                          name="nom" 
+                          value={profile.nom} 
                           onChange={handleInputChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                           required 
                         />
                       ) : (
-                        <p className="text-gray-800">{profile.lastName}</p>
+                        <p className="text-gray-800">{profile.nom}</p>
                       )}
                     </div>
                     <div>
@@ -425,13 +415,13 @@ const Profile = () => {
                       {isEditing ? (
                         <input 
                           type="tel" 
-                          name="phone" 
-                          value={profile.phone} 
+                          name="telephone" 
+                          value={profile.telephone} 
                           onChange={handleInputChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
-                        <p className="text-gray-800">{profile.phone}</p>
+                        <p className="text-gray-800">{profile.telephone}</p>
                       )}
                     </div>
                     <div>
@@ -439,31 +429,13 @@ const Profile = () => {
                       {isEditing ? (
                         <input 
                           type="date" 
-                          name="birthDate" 
-                          value={profile.birthDate} 
+                          name="date_naissance" 
+                          value={profile.date_naissance} 
                           onChange={handleInputChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
-                        <p className="text-gray-800">{new Date(profile.birthDate).toLocaleDateString()}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 mb-1 font-medium">Preferred Language</label>
-                      {isEditing ? (
-                        <select 
-                          name="preferredLanguage" 
-                          value={profile.preferredLanguage} 
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
-                        >
-                          <option value="english">English</option>
-                          <option value="french">French</option>
-                          <option value="german">German</option>
-                          <option value="spanish">Spanish</option>
-                        </select>
-                      ) : (
-                        <p className="text-gray-800 capitalize">{profile.preferredLanguage}</p>
+                        <p className="text-gray-800">{profile.date_naissance ? new Date(profile.date_naissance).toLocaleDateString() : 'Not provided'}</p>
                       )}
                     </div>
                   </div>
@@ -484,13 +456,13 @@ const Profile = () => {
                       {isEditing ? (
                         <input 
                           type="text" 
-                          name="address" 
-                          value={profile.address} 
+                          name="adresse" 
+                          value={profile.adresse} 
                           onChange={handleInputChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
-                        <p className="text-gray-800">{profile.address}</p>
+                        <p className="text-gray-800">{profile.adresse}</p>
                       )}
                     </div>
                     <div>
@@ -498,22 +470,20 @@ const Profile = () => {
                       {isEditing ? (
                         <input 
                           type="text" 
-                          name="city" 
-                          value={profile.city} 
+                          name="ville" 
+                          value={profile.ville} 
                           onChange={handleInputChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
                         />
                       ) : (
-                        <p className="text-gray-800">{profile.city}</p>
+                        <p className="text-gray-800">{profile.ville}</p>
                       )}
                     </div>
-                    
-                
                   </div>
                 </div>
                 
                 {/* Driver-specific Information */}
-                {user?.role === 'conducteur' && driverInfo && (
+                {user?.role === 'conducteur' && (
                   <div className="mb-8">
                     <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -525,36 +495,146 @@ const Profile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-gray-700 mb-1 font-medium">License Number</label>
-                        <p className="text-gray-800">{driverInfo.num_permis || 'Not provided'}</p>
+                        {isEditing ? (
+                          <input 
+                            type="text" 
+                            name="num_permis" 
+                            value={profile.num_permis} 
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300" 
+                          />
+                        ) : (
+                          <p className="text-gray-800">{profile.num_permis || 'Not provided'}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-gray-700 mb-1 font-medium">Gender</label>
-                        <p className="text-gray-800 capitalize">{driverInfo.sexe || 'Not provided'}</p>
+                        {isEditing ? (
+                          <select 
+                            name="sexe" 
+                            value={profile.sexe} 
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                          >
+                            <option value="">Select gender</option>
+                            <option value="homme">Male</option>
+                            <option value="femme">Female</option>
+                            <option value="other">Other</option>
+                          </select>
+                        ) : (
+                          <p className="text-gray-800 capitalize">{profile.sexe || 'Not provided'}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-gray-700 mb-1 font-medium">Availability</label>
-                        <p className="text-gray-800">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            driverInfo.disponibilite 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {driverInfo.disponibilite ? 'Available' : 'Not Available'}
-                          </span>
-                        </p>
+                        {isEditing ? (
+                          <div className="flex items-center mt-2">
+                            <input 
+                              type="checkbox" 
+                              id="disponibilite" 
+                              name="disponibilite" 
+                              checked={profile.disponibilite} 
+                              onChange={(e) => setProfile({...profile, disponibilite: e.target.checked})}
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" 
+                            />
+                            <label htmlFor="disponibilite" className="ml-2 block text-sm text-gray-700">
+                              Available for rides
+                            </label>
+                          </div>
+                        ) : (
+                          <p className="text-gray-800">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              profile.disponibilite 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {profile.disponibilite ? 'Available' : 'Not Available'}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                      {driverInfo && (
+                        <div>
+                          <label className="block text-gray-700 mb-1 font-medium">Average Rating</label>
+                          <div className="flex items-center">
+                            <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <span className="ml-1 text-gray-800">
+                              {typeof driverInfo.note_moyenne === 'number' 
+                                ? driverInfo.note_moyenne.toFixed(1)
+                                : parseFloat(driverInfo.note_moyenne || 0).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-gray-700 mb-1 font-medium">Driver's License Photo</label>
+                        {isEditing ? (
+                          <div className="mt-1 flex items-center">
+                            <label className="block">
+                              <span className="sr-only">Choose license photo</span>
+                              <input 
+                                type="file" 
+                                name="photo_permis"
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const previewUrl = handleFileChange('photo_permis', file);
+                                    setProfile({
+                                      ...profile,
+                                      photo_permis: previewUrl
+                                    });
+                                  }
+                                }}
+                              />
+                            </label>
+                            {profile.photo_permis && (
+                              <div className="ml-5 h-12 w-12 overflow-hidden rounded-md">
+                                <img src={profile.photo_permis} alt="License preview" className="h-full w-full object-cover" />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-800">
+                            {profile.photo_permis ? 'Provided' : 'Not provided'}
+                          </p>
+                        )}
                       </div>
                       <div>
-                        <label className="block text-gray-700 mb-1 font-medium">Average Rating</label>
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          <span className="ml-1 text-gray-800">
-                            {typeof driverInfo.note_moyenne === 'number' 
-                              ? driverInfo.note_moyenne.toFixed(1)
-                              : parseFloat(driverInfo.note_moyenne || 0).toFixed(1)}
-                          </span>
-                        </div>
+                        <label className="block text-gray-700 mb-1 font-medium">ID Photo</label>
+                        {isEditing ? (
+                          <div className="mt-1 flex items-center">
+                            <label className="block">
+                              <span className="sr-only">Choose ID photo</span>
+                              <input 
+                                type="file" 
+                                name="photo_identite"
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const previewUrl = handleFileChange('photo_identite', file);
+                                    setProfile({
+                                      ...profile,
+                                      photo_identite: previewUrl
+                                    });
+                                  }
+                                }}
+                              />
+                            </label>
+                            {profile.photo_identite && (
+                              <div className="ml-5 h-12 w-12 overflow-hidden rounded-md">
+                                <img src={profile.photo_identite} alt="ID preview" className="h-full w-full object-cover" />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-800">
+                            {profile.photo_identite ? 'Provided' : 'Not provided'}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -686,24 +766,6 @@ const Profile = () => {
               )}
             </form>
           </div>
-          
-          {/* Account Actions */}
-          {!isEditing && (
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button 
-                onClick={() => navigate('/change-password')}
-                className="block w-full bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                Change Password
-              </Button>
-              <Button 
-                onClick={() => navigate('/payment-methods')}
-                className="block w-full bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-50 px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                Payment Methods
-              </Button>
-            </div>
-          )}
         </div>
       </div>
       
