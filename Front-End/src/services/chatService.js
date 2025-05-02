@@ -10,7 +10,17 @@ export const chatService = {
     },
 
     getMessages: async (userId) => {
+        if (userId === 'all') {
+            const response = await api.get('/chat/messages/all');
+            return response.data;
+        }
+        
         const response = await api.get(`/chat/messages/${userId}`);
+        return response.data;
+    },
+    
+    getAllMessages: async () => {
+        const response = await api.get('/chat/messages/all');
         return response.data;
     },
 

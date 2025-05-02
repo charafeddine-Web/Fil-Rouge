@@ -25,9 +25,8 @@ const SearchRides = ({user}) => {
   
   // Filter options
   const [priceRange, setPriceRange] = useState([0, 200]);
-  const [departureTime, setDepartureTime] = useState("any");
   const [sortBy, setSortBy] = useState("departure_time");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   
   const [smokeAllowed, setSmokeAllowed] = useState(null);
   const [luggageAllowed, setLuggageAllowed] = useState(null);
@@ -49,7 +48,7 @@ const SearchRides = ({user}) => {
       } catch (error) {
         console.error("Error fetching rides:", error);
         setFilteredRides([]);
-        toast.error("Erreur lors du chargement des trajets");
+        toast.error("Error loading rides");
       } finally {
         setLoading(false);
       }
@@ -80,24 +79,24 @@ const SearchRides = ({user}) => {
       setFilteredRides(searchResults);
       
       if (searchResults.length === 0) {
-        toast.info("Aucun trajet trouvé pour votre recherche");
+        toast.info("No rides found for your search");
       } else {
-        toast.success(`${searchResults.length} trajets trouvés`);
+        toast.success(`${searchResults.length} rides found`);
       }
     } catch (error) {
       console.error("Error searching rides:", error);
       if (error.response) {
         console.error("Server error:", error.response.data);
-        toast.error(error.response.data.message || "Erreur lors de la recherche");
+        toast.error(error.response.data.message || "Error during search");
       } else {
-        toast.error("Erreur lors de la recherche");
+        toast.error("Error during search");
       }
     } finally {
       setLoading(false);
     }
   };
   
-  // Apply filters when they change (but only after initial search has been done)
+  // Apply filters when they change 
   useEffect(() => {
     if (hasSearched) {
       const applyFilters = async () => {
@@ -118,17 +117,16 @@ const SearchRides = ({user}) => {
           setRides(searchResults);
           
           if (searchResults.length === 0) {
-            toast.info("Aucun trajet trouvé pour ces filtres");
+            toast.info("No rides found for these filters");
           }
         } catch (error) {
           console.error("Error applying filters:", error);
-          toast.error("Erreur lors de l'application des filtres");
+          toast.error("Error applying filters");
         } finally {
           setLoading(false);
         }
       };
 
-      // Use a debounce to avoid too many API calls when filters change
       const debounceTimeout = setTimeout(() => {
         applyFilters();
       }, 500);
@@ -142,27 +140,6 @@ const SearchRides = ({user}) => {
     if (!rides.length) return;
     
     let results = [...rides];
-    
-    // Apply departure time filter if it's not handled by the API
-    if (departureTime !== "any") {
-      results = results.filter((ride) => {
-        const departureTime = new Date(ride.date_depart);
-        const departureHour = departureTime.getHours();
-        
-        switch (departureTime) {
-          case "morning":
-            return departureHour >= 5 && departureHour < 12;
-          case "afternoon":
-            return departureHour >= 12 && departureHour < 17;
-          case "evening":
-            return departureHour >= 17 && departureHour < 21;
-          case "night":
-            return departureHour >= 21 || departureHour < 5;
-          default:
-            return true;
-        }
-      });
-    }
     
     // Apply sorting - this is done client-side since it's not part of the API
     results.sort((a, b) => {
@@ -184,7 +161,7 @@ const SearchRides = ({user}) => {
 
   useEffect(() => {
     applyClientSideFilters();
-  }, [rides, departureTime, sortBy]);
+  }, [rides, sortBy]);
 
   // Helper functions for formatting
   const formatTime = (dateTimeString) => {
@@ -214,7 +191,15 @@ const SearchRides = ({user}) => {
   };
 
   if (loading) {
-    return <Loader />;
+    return (
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
+    );
   }
 
   const mappedRides = filteredRides.map(ride => ({
@@ -222,7 +207,7 @@ const SearchRides = ({user}) => {
     driver: {
       name: ride.conducteur?.user?.nom || 'Unknown Driver',
       prenom: ride.conducteur?.user?.prenom || 'Unknown Driver',
-      image: ride.conducteur?.user?.photoDeProfil || '/placeholder-avatar.jpg',
+      image: ride.conducteur?.user?.photoDeProfil || null,
       rating: ride.conducteur?.note_moyenne || 0.0,
       reviewCount: ride.conducteur?.review_count || 0,
       status: ride.conducteur?.status || 'active' 
@@ -245,11 +230,11 @@ const SearchRides = ({user}) => {
 
   // Generate page title based on search state
   const pageTitle = hasSearched
-    ? `${mappedRides.length} trajets disponibles de ${departure || "toutes les villes"} à ${destination || "toutes les destinations"}`
-    : "Tous les trajets disponibles";  
+    ? `${mappedRides.length} rides available from ${departure || "all cities"} to ${destination || "all destinations"}`
+    : "All available rides";  
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 pt-8">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header/>
 
       {/* Modern Hero Search Section */}
@@ -258,7 +243,7 @@ const SearchRides = ({user}) => {
           <form onSubmit={handleSearch} className="bg-white p-6 rounded-xl shadow-lg max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="relative">
-                <label htmlFor="departure" className="block text-sm font-medium text-gray-700 mb-2">De</label>
+                <label htmlFor="departure" className="block text-sm font-medium text-gray-700 mb-2">From</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,13 +257,13 @@ const SearchRides = ({user}) => {
                     value={departure}
                     onChange={(e) => setDeparture(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                    placeholder="Ville de départ"
+                    placeholder="Departure city"
                   />
                 </div>
               </div>
               
               <div className="relative">
-                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">À</label>
+                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">To</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,13 +277,13 @@ const SearchRides = ({user}) => {
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                    placeholder="Ville d'arrivée"
+                    placeholder="Destination city"
                   />
                 </div>
               </div>
               
               <div className="relative">
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">Quand</label>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">When</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +301,7 @@ const SearchRides = ({user}) => {
               </div>
               
               <div className="relative">
-                <label htmlFor="passengers" className="block text-sm font-medium text-gray-700 mb-2">Passagers</label>
+                <label htmlFor="passengers" className="block text-sm font-medium text-gray-700 mb-2">Passengers</label>
                 <div className="flex">
                   <div className="relative flex-grow">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -341,7 +326,7 @@ const SearchRides = ({user}) => {
                     </span>
                   </div>
                   <Button type="submit" className="rounded-l-none px-6 py-3">
-                    <span className="mr-2">Rechercher</span>
+                    <span className="mr-2">Search</span>
                     <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -353,46 +338,40 @@ const SearchRides = ({user}) => {
         </div>
       </div>
       
-      {/* Main Content Area */}
-      <div className="container mx-auto px-4 py-8 flex-grow max-w-6xl">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
-            {hasSearched ? (
-              <>
-                <span className="text-green-600">{mappedRides.length}</span> trajets disponibles de {departure || "toutes les villes"} à {destination || "toutes les destinations"}
-              </>
-            ) : (
-              <>Tous les trajets disponibles</>
-            )}
-          </h1>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center text-green-600 hover:text-green-800 bg-white px-4 py-2 rounded-lg shadow-sm transition-all hover:shadow border border-green-100"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
-          </button>
-        </div>
+      {/* Main Content Area - Two-column layout */}
+      <div className="container mx-auto px-4 py-8 flex-grow max-w-7xl">
+        <h1 className="text-2xl font-bold text-gray-800 mb-8">
+          {hasSearched ? (
+            <>
+              <span className="text-green-600">{mappedRides.length}</span> rides available from {departure || "all cities"} to {destination || "all destinations"}
+            </>
+          ) : (
+            <>All available rides</>
+          )}
+        </h1>
         
-        {/* Filters Panel */}
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="mb-8"
-          >
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Sidebar - Filters */}
+          <div className="lg:w-1/4">
+            <div className="bg-white p-6 rounded-xl shadow-md sticky top-20">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="lg:hidden text-green-600 hover:text-green-700"
+                >
+                  {showFilters ? "Hide" : "Show"}
+                </button>
+              </div>
+              
+              <div className={`space-y-8 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+                {/* Price Range Filter */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-700">
+                  <h3 className="text-md font-semibold mb-4 flex items-center text-gray-700">
                     <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Fourchette de prix
+                    Price Range
                   </h3>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-600 font-medium">{priceRange[0]} MAD</span>
@@ -407,13 +386,14 @@ const SearchRides = ({user}) => {
                     className="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
-                    
+                
+                {/* Sort By Filter */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-700">
+                  <h3 className="text-md font-semibold mb-4 flex items-center text-gray-700">
                     <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                     </svg>
-                    Trier par
+                    Sort By
                   </h3>
                   <div className="relative">
                     <select
@@ -421,10 +401,10 @@ const SearchRides = ({user}) => {
                       onChange={(e) => setSortBy(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all appearance-none"
                     >
-                      <option value="departure_time">Heure de départ</option>
-                      <option value="price_low">Prix: croissant</option>
-                      <option value="price_high">Prix: décroissant</option>
-                      <option value="rating">Note du conducteur</option>
+                      <option value="departure_time">Departure Time</option>
+                      <option value="price_low">Price: Low to High</option>
+                      <option value="price_high">Price: High to Low</option>
+                      <option value="rating">Driver Rating</option>
                     </select>
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -432,89 +412,98 @@ const SearchRides = ({user}) => {
                       </svg>
                     </span>
                   </div>
-                  
                 </div>
                 
-                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-gray-100">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-700">
-                      <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      Préférences
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center">
-                        <input
-                          id="smokeAllowed"
-                          type="checkbox"
-                          checked={smokeAllowed === true}
-                          onChange={(e) => setSmokeAllowed(e.target.checked ? true : null)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="smokeAllowed" className="ml-2 block text-sm text-gray-700">
-                          Fumer autorisé
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input
-                          id="luggageAllowed"
-                          type="checkbox"
-                          checked={luggageAllowed === true}
-                          onChange={(e) => setLuggageAllowed(e.target.checked ? true : null)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="luggageAllowed" className="ml-2 block text-sm text-gray-700">
-                          Bagages autorisés
-                        </label>
-                      </div>
+                {/* Preferences */}
+                <div>
+                  <h3 className="text-md font-semibold mb-4 flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    Preferences
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <input
+                        id="smokeAllowed"
+                        type="checkbox"
+                        checked={smokeAllowed === true}
+                        onChange={(e) => setSmokeAllowed(e.target.checked ? true : null)}
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="smokeAllowed" className="ml-2 block text-sm text-gray-700">
+                        Smoking allowed
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        id="luggageAllowed"
+                        type="checkbox"
+                        checked={luggageAllowed === true}
+                        onChange={(e) => setLuggageAllowed(e.target.checked ? true : null)}
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="luggageAllowed" className="ml-2 block text-sm text-gray-700">
+                        Luggage allowed
+                      </label>
                     </div>
                   </div>
                 </div>
+                
+                {/* Apply Filters Button (Mobile Only) */}
+                <button 
+                  onClick={() => applyClientSideFilters()}
+                  className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300 lg:hidden"
+                >
+                  Apply Filters
+                </button>
               </div>
             </div>
-          </motion.div>
-        )}
-        
-        {/* No Results */}
-        {mappedRides.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-md">
-            <svg
-              className="w-20 h-20 text-gray-300 mx-auto mb-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Aucun trajet trouvé</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Essayez d'ajuster vos critères de recherche ou revenez plus tard pour de nouveaux trajets.
-            </p>
-            <Link to="/offer-ride">
-              <Button className="px-8 py-3">Proposer un trajet</Button>
-            </Link>
           </div>
-        ) : (
-          /* Ride Cards */
-          <RideCard mappedRides={mappedRides} 
-          formatDate={formatDate} 
-          formatTime={formatTime}
-           calculateDuration={calculateDuration}/>
-        )}
-        
-        {mappedRides.length > 10 && (
-          <div className="text-center mt-10">
-            <Button variant="outline" className="px-8 py-3">
-              Charger plus de trajets
-            </Button>
+          
+          {/* Right Content - Ride Listings */}
+          <div className="lg:w-3/4">
+            {/* No Results */}
+            {mappedRides.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-xl shadow-md">
+                <svg
+                  className="w-20 h-20 text-gray-300 mx-auto mb-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">No rides found</h2>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  Try adjusting your search criteria or check back later for new rides.
+                </p>
+                <Link to="/offer-ride">
+                  <Button className="px-8 py-3">Offer a ride</Button>
+                </Link>
+              </div>
+            ) : (
+              /* Ride Cards */
+              <RideCard mappedRides={mappedRides} 
+              formatDate={formatDate} 
+              formatTime={formatTime}
+              calculateDuration={calculateDuration}/>
+            )}
+            
+            {mappedRides.length > 10 && (
+              <div className="text-center mt-10">
+                <Button variant="outline" className="px-8 py-3">
+                  Load more rides
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
       
       {/* Promotional Section */}
@@ -523,18 +512,18 @@ const SearchRides = ({user}) => {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="flex flex-col md:flex-row">
               <div className="md:w-1/2 bg-green-500 p-10 text-white">
-                <h2 className="text-3xl font-bold mb-4">Vous voulez gagner un revenu supplémentaire ?</h2>
+                <h2 className="text-3xl font-bold mb-4">Want to earn extra income?</h2>
                 <p className="mb-8">
-                  Partagez vos trajets et gagnez de l'argent en remplissant ces sièges vides. C'est facile, écologique et économique.
+                  Share your rides and earn money by filling those empty seats. It's easy, eco-friendly and economical.
                 </p>
                 <Link to="/register">
                   <Button variant="white" className="px-8 py-3 bg-white text-black">
-                    Proposer un trajet maintenant
+                    Offer a ride now
                   </Button>
                 </Link>
               </div>
               <div className="md:w-1/2 p-10">
-                <h3 className="text-2xl font-bold mb-6 text-gray-800">Pourquoi proposer des trajets ?</h3>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">Why offer rides?</h3>
                 <div className="space-y-6">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 bg-green-100 rounded-lg p-2 mr-4">
@@ -543,8 +532,8 @@ const SearchRides = ({user}) => {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-lg font-medium text-gray-800">Gagnez un revenu supplémentaire</h4>
-                      <p className="text-gray-600">Faites payer votre voyage en partageant votre trajet avec d'autres personnes.</p>
+                      <h4 className="text-lg font-medium text-gray-800">Earn extra income</h4>
+                      <p className="text-gray-600">Cover your travel expenses by sharing your journey with others.</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -554,8 +543,8 @@ const SearchRides = ({user}) => {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-lg font-medium text-gray-800">Rencontrez de nouvelles personnes</h4>
-                      <p className="text-gray-600">Connectez-vous avec des personnes intéressantes et profitez d'une bonne conversation.</p>
+                      <h4 className="text-lg font-medium text-gray-800">Meet new people</h4>
+                      <p className="text-gray-600">Connect with interesting people and enjoy good conversation.</p>
                     </div>
                   </div>
                 </div>

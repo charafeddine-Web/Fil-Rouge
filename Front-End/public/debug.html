@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatify API Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 8px 12px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #3672b3;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 500px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatify API Debug Tool</h1>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Authentication Status</h2>
+            <div id="auth-status">Checking...</div>
+            <button id="login-btn" class="hidden">Login</button>
+            <button id="logout-btn" class="hidden">Logout</button>
+        </div>
+
+        <div class="card">
+            <h2>API Endpoints</h2>
+            <div>
+                <button id="ping">Ping Server</button>
+                <button id="get-contacts">Get Contacts</button>
+                <button id="get-users">Get All Users</button>
+                <button id="get-settings">Get Chatify Settings</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Result</h2>
+            <div id="status"></div>
+            <pre id="result">No data yet. Click a button above to test an endpoint.</pre>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        let token = localStorage.getItem('token');
+        
+        // Check authentication status
+        function checkAuth() {
+            const authStatus = document.getElementById('auth-status');
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (token) {
+                authStatus.textContent = `Authenticated with token: ${token.substring(0, 15)}...`;
+                authStatus.classList.add('success');
+                logoutBtn.classList.remove('hidden');
+                loginBtn.classList.add('hidden');
+            } else {
+                authStatus.textContent = 'Not authenticated. Login to test protected endpoints.';
+                authStatus.classList.add('error');
+                loginBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+            }
+        }
+        
+        // Add event listeners
+        document.getElementById('ping').addEventListener('click', () => testEndpoint('/ping'));
+        document.getElementById('get-contacts').addEventListener('click', () => testEndpoint('/chatify/contacts'));
+        document.getElementById('get-users').addEventListener('click', () => testEndpoint('/users'));
+        document.getElementById('get-settings').addEventListener('click', () => testEndpoint('/chatify/settings'));
+        
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const email = prompt('Enter your email:');
+            const password = prompt('Enter your password:');
+            
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                const data = await response.json();
+                displayResult(data);
+                
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    checkAuth();
+                }
+            } catch (error) {
+                displayError(error);
+            }
+        });
+        
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            token = null;
+            checkAuth();
+            displayResult({ message: 'Logged out successfully' });
+        });
+        
+        // Test API endpoint
+        async function testEndpoint(endpoint) {
+            const statusEl = document.getElementById('status');
+            const resultEl = document.getElementById('result');
+            
+            try {
+                statusEl.textContent = `Testing ${endpoint}...`;
+                statusEl.className = '';
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const startTime = performance.now();
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    headers,
+                });
+                const endTime = performance.now();
+                
+                const data = await response.json();
+                const timeElapsed = Math.round(endTime - startTime);
+                
+                if (response.ok) {
+                    statusEl.textContent = `Success! Status: ${response.status} (${timeElapsed}ms)`;
+                    statusEl.className = 'success';
+                } else {
+                    statusEl.textContent = `Error! Status: ${response.status} (${timeElapsed}ms)`;
+                    statusEl.className = 'error';
+                }
+                
+                displayResult(data);
+            } catch (error) {
+                displayError(error);
+            }
+        }
+        
+        function displayResult(data) {
+            document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+        
+        function displayError(error) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = `Error: ${error.message}`;
+            statusEl.className = 'error';
+            document.getElementById('result').textContent = error.stack || error.message;
+        }
+        
+        // Initialize
+        checkAuth();
+    </script>
+</body>
+</html> 

@@ -16,3 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+
+
+// Chat routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/chat/with/{userId}', 'App\Http\Controllers\ChatController@startChat')->name('chat.start');
+});

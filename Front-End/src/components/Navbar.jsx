@@ -1,6 +1,7 @@
 import { useState, useContext, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+// import ChatNotifications from "./ChatNotifications";
 
 const Navbar = ({ mobile = false }) => {
   const location = useLocation();
@@ -32,14 +33,13 @@ const Navbar = ({ mobile = false }) => {
     // { name: "Home", path: "/" },
     { name: "Search Rides", path: "/offer-ride" },
     { name: "My Reservations", path: "/Myreservations" },
-    { name: "Messaging", path: "/messaging" },
+    { name: "Messaging", path: "/chat" },
   ];
 
-  // Links for drivers
   const driverLinks = [
     { name: "Dashboard", path: "/dashboard" },
     { name: "My Rides", path: "/my-rides" },
-    { name: "Messaging", path: "/messaging" },
+    { name: "Messaging", path: "/chat" },
   ];
 
   const isActive = (path) => {
@@ -60,7 +60,6 @@ const Navbar = ({ mobile = false }) => {
   const navLinks = getNavLinks();
 
   return (
-
     <nav className={`font-urbanist ${mobile ? "" : "flex items-center"}`}>
       {/* Navigation Links */}
       <div className={mobile ? "space-y-1" : "flex items-center"}>
@@ -101,6 +100,28 @@ const Navbar = ({ mobile = false }) => {
                     </div>
                     <span>My Profile</span>
                   </Link>
+                  <Link
+                    to="/chat"
+                    className="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg mt-1"
+                  >
+                    <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium mr-3">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                        />
+                      </svg>
+                    </div>
+                    <span>Messages</span>
+                  </Link>
                   <button
                     onClick={logout}
                     className="w-full flex items-center px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg mt-1"
@@ -109,7 +130,12 @@ const Navbar = ({ mobile = false }) => {
                   </button>
                 </>
               ) : (
-                <div className="relative">
+                <div className="relative flex items-center">
+                  {/* Chat Notifications Icon */}
+                  {/* <div className="mr-3">
+                    <ChatNotifications />
+                  </div> */}
+                  
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="flex items-center space-x-2 bg-gray-50 hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-full transition-colors"
@@ -136,7 +162,7 @@ const Navbar = ({ mobile = false }) => {
 
                   {/* User dropdown */}
                   {dropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 border border-gray-100">
+                    <div className="absolute right-0 mt-40 w-48 bg-white rounded-lg shadow-lg py-2 border border-gray-100">
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600"

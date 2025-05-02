@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Loader from "../components/Loader";
@@ -11,6 +11,8 @@ const Home = () => {
   const [destination, setDestination] = useState("");
   const [departure, setDeparture] = useState("");
   const [date, setDate] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,9 +112,13 @@ const Home = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Handle search functionality
-    console.log("Searching for rides from", departure, "to", destination, "on", date);
-    // Redirect to search results page
+    // Show modal instead of searching
+    setShowModal(true);
+  };
+
+  const handleRedirectToRegister = () => {
+    setShowModal(false);
+    navigate('/register');
   };
 
   if (loading) {
@@ -211,7 +217,7 @@ const Home = () => {
                   onChange={(e) => setDeparture(e.target.value)}
                   className="pl-10 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none transition"
                   placeholder="Your starting point"
-                  required
+                  
                 />
               </div>
             </div>
@@ -232,7 +238,7 @@ const Home = () => {
                   onChange={(e) => setDestination(e.target.value)}
                   className="pl-10 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none transition"
                   placeholder="Your destination"
-                  required
+                  
                 />
               </div>
             </div>
@@ -251,7 +257,7 @@ const Home = () => {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="pl-10 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none transition"
-                  required
+                  
                 />
               </div>
             </div>
@@ -439,6 +445,64 @@ const Home = () => {
         </div>
       </section>
       
+      {/* Modal Popup */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full relative"
+            >
+              {/* Close button */}
+              <button 
+                onClick={() => setShowModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              
+              {/* Modal content */}
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">Welcome to SwiftCar!</h3>
+                <p className="text-gray-600 mb-6">
+                  You're just one step away from unlocking a world of affordable, eco-friendly rides and meaningful connections! Join our community of smart commuters today and transform your travel experience.
+                </p>
+                <div className="flex flex-col space-y-3">
+                  <button 
+                    onClick={handleRedirectToRegister}
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow transition duration-200"
+                  >
+                    Create Your Account
+                  </button>
+                  <button 
+                    onClick={() => setShowModal(false)}
+                    className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition duration-200"
+                  >
+                    Continue Exploring
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+            
     </div>
   );
 };

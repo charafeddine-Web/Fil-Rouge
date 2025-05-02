@@ -9,6 +9,7 @@ import Button from "../../components/Button";
 import { getReservationsByUserId, cancelReservation, submitDriverReview } from "../../services/reservations";
 import { AuthContext } from "../../context/AuthContext";
 import { useContext } from "react";
+import ContactDriverButton from '../../components/ContactDriverButton';
 
 const MyReservations = () => {
   const [loading, setLoading] = useState(true);
@@ -288,9 +289,17 @@ const MyReservations = () => {
     }
   };
 
-  // Show loader while user data is being fetched
+
   if (loadingUser) {
-    return <Loader />;
+    return (
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
+    );
   }
 
   // Redirect to login if user is not authenticated
@@ -306,10 +315,18 @@ const MyReservations = () => {
   }
 
   // Show loader while reservations are being fetched
+ 
   if (loading) {
-    return <Loader />;
+    return (
+      <>
+        <Header/>
+        <div className="my-20">
+           <Loader/>
+        </div>
+        <Footer/> 
+      </>   
+    );
   }
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
@@ -525,11 +542,18 @@ const MyReservations = () => {
                       {trajet.conducteur ? (
                         <div className="flex items-center mb-4">
                           <div className="relative">
-                            <img
-                              src={trajet.conducteur.image || "https://via.placeholder.com/80"}
-                              alt={trajet.conducteur.user.nom || "Driver"}
-                              className="w-12 h-12 rounded-full object-cover mr-3"
-                            />
+                            {trajet.conducteur.image ? (
+                              <img
+                                src={trajet.conducteur.image}
+                                alt={trajet.conducteur.user.nom || "Driver"}
+                                className="w-12 h-12 rounded-full object-cover mr-3"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-green-500 flex items-center justify-center text-white font-bold mr-3 text-sm">
+                                {trajet.conducteur.user.nom && trajet.conducteur.user.nom.charAt(0).toUpperCase()}
+                                {trajet.conducteur.user.prenom && trajet.conducteur.user.prenom.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             {trajet.conducteur.user.email_verified && (
                               <span className="absolute bottom-0 right-3 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -584,14 +608,12 @@ const MyReservations = () => {
                         )}
                         
                         {(reservation.status === "confirmee" || reservation.status === "en_attente") && (
-                          <Link to={`/messages?ride=${trajet.id}`} className="block">
-                            <button className="w-full py-2 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors focus:outline-none flex items-center justify-center">
-                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                              </svg>
-                              Message Driver
-                            </button>
-                          </Link>
+                          <div className="w-full">
+                            <ContactDriverButton 
+                              driverId={trajet.conducteur?.user?.id} 
+                              driverName={`${trajet.conducteur?.user?.prenom || 'Driver'}`}
+                            />
+                          </div>
                         )}
                       </div>
                     </div>

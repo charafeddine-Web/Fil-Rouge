@@ -577,7 +577,15 @@ const MyRide = ({ user }) => {
   }
   
   if (loading) {
-    return <Loader />
+    return (
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
+    );
   }
   
   return (

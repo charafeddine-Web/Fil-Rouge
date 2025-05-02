@@ -24,8 +24,8 @@ export const rejectReservation = (reservationId) => {
   return api.patch(`/reservations/${reservationId}`, requestData);
 };
 
-// export const getReservationsByDriverId = () => api.get(`/conducteur/reservations`);
-export const getReservationsByDriverId = (driverId) => api.get(`/reservations?conducteur_id=${driverId}`);
+export const getReservationsByDriverId = () => api.get(`/conducteur/reservations`);
+// export const getReservationsByDriverId = (driverId) => api.get(`/reservations?conducteur_id=${driverId}`);
 
 export const getReservationsByTrajetId = (trajetId) => api.get(`/reservations?trajet_id=${trajetId}`);
 
