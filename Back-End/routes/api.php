@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\Api\UserController as ApiUserController;
-use App\Http\Controllers\Api\Auth\AuthController as ApiAuthController;
-use App\Http\Controllers\Api\Auth\LogoutController as ApiLogoutController;
-use App\Http\Controllers\Api\Auth\RegisterController as ApiRegisterController;
-use App\Http\Controllers\Api\Auth\ForgotPasswordController as ApiForgotPasswordController;
-use App\Http\Controllers\Api\Auth\VerificationController as ApiVerificationController;
-use App\Http\Controllers\Api\Auth\ResetPasswordController as ApiResetPasswordController;
+//use App\Http\Controllers\Api\UserController as ApiUserController;
+//use App\Http\Controllers\Api\Auth\AuthController as ApiAuthController;
+//use App\Http\Controllers\Api\Auth\LogoutController as ApiLogoutController;
+//use App\Http\Controllers\Api\Auth\RegisterController as ApiRegisterController;
+//use App\Http\Controllers\Api\Auth\ForgotPasswordController as ApiForgotPasswordController;
+//use App\Http\Controllers\Api\Auth\VerificationController as ApiVerificationController;
+//use App\Http\Controllers\Api\Auth\ResetPasswordController as ApiResetPasswordController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -117,19 +117,19 @@ Route::get('/ping', function () {
 });
 
 // Test broadcasting endpoint
-Route::middleware('auth:sanctum')->get('/test-broadcast', function () {
-    broadcast(new \App\Events\NewChatMessage([
-        'id' => 1,
-        'from_id' => auth()->id(),
-        'to_id' => request('user_id'),
-        'body' => 'Test message from broadcast',
-        'created_at' => now(),
-        'updated_at' => now(),
-        'seen' => 0,
-    ]));
-    
-    return response()->json(['status' => true, 'message' => 'Test broadcast sent']);
-});
+//Route::middleware('auth:sanctum')->get('/test-broadcast', function () {
+//    broadcast(new \App\Events\NewChatMessage([
+//        'id' => 1,
+//        'from_id' => auth()->id(),
+//        'to_id' => request('user_id'),
+//        'body' => 'Test message from broadcast',
+//        'created_at' => now(),
+//        'updated_at' => now(),
+//        'seen' => 0,
+//    ]));
+//
+//    return response()->json(['status' => true, 'message' => 'Test broadcast sent']);
+//});
 
 // Broadcasting auth endpoint
 Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
@@ -142,9 +142,7 @@ Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request 
             'useTLS' => true
         ]
     );
-    
     $auth = $pusher->socket_auth($request->channel_name, $request->socket_id);
-    
     return response()->json(json_decode($auth));
 });
 
