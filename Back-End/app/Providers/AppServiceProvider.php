@@ -36,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
-    }
+        \Illuminate\Support\Facades\Response::macro('chatifyIframe', function ($content) {
+            return response($content)->header('X-Frame-Options', 'ALLOWALL');
+        });    }
 }

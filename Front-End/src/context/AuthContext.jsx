@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import { getCurrentUser } from '../services/auth'; 
+import { initEcho } from '../services/echo';
 
 export const AuthContext = createContext();
 
@@ -14,6 +15,8 @@ export const AuthContext = createContext();
         .then((response) => {
           console.log("User Data:", response.data);  
           setUser(response.data);
+          // Initialize Laravel Echo for real-time messaging
+          initEcho(token);
         })
         .catch(() => {
           setToken(null);
@@ -32,6 +35,8 @@ export const AuthContext = createContext();
     setToken(newToken);
     if (newToken) {
       localStorage.setItem('token', newToken);
+      // Initialize Echo when token is set
+      initEcho(newToken);
     } else {
       localStorage.removeItem('token');
     }
@@ -45,7 +50,7 @@ export const AuthContext = createContext();
   };
   
   return (
-    <AuthContext.Provider value={{ token, setToken: handleSetToken, user, setUser,isAuthenticated, logout,loadingUser }}>
+    <AuthContext.Provider value={{ token, setToken: handleSetToken, user, setUser, isAuthenticated, logout, loadingUser }}>
       {children}
     </AuthContext.Provider>
   );

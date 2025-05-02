@@ -4,9 +4,9 @@ import Button from "../components/Button";
 
 
 export default function RideCard({ mappedRides, formatDate, formatTime, calculateDuration }) {
+    console.log('hadaaa searcg',mappedRides);
 
     const rides = Array.isArray(mappedRides) ? mappedRides : [];
-console.log(rides);
     return (
         <div className="space-y-6">
             {rides.map((ride, index) => (

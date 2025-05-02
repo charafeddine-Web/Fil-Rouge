@@ -132,7 +132,7 @@ const DriverDashboard = ({user}) => {
       const conducteurRes = await getConducteurByUserId(user.id);
       const conducteurId = conducteurRes.data.id;
       const response2 = await getTrajetsByDriverId(conducteurId);
-      const reservationsRes = await getReservationsByDriverId(conducteurId);
+      const reservationsRes = await getReservationsByDriverId();
       
       setDriverData(prevData => ({
         ...prevData,
@@ -187,7 +187,7 @@ const DriverDashboard = ({user}) => {
       const conducteurRes = await getConducteurByUserId(user.id);
       const conducteurId = conducteurRes.data.id;
       const response2 = await getTrajetsByDriverId(conducteurId);
-      const reservationsRes = await getReservationsByDriverId(conducteurId);
+      const reservationsRes = await getReservationsByDriverId();
       
       setDriverData(prevData => ({
         ...prevData,
@@ -251,7 +251,13 @@ const DriverDashboard = ({user}) => {
 
   if (loading) {
     return (
-    <Loader/>
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
     );
   }
 

@@ -8,7 +8,6 @@ import 'react-toastify/dist/ReactToastify.css';
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
 import UserLayout from './layouts/UserLayout';
-// import AdminLayout from './layouts/AdminLayout';
 
 // Pages publiques
 import Home from './pages/Home';
@@ -21,25 +20,19 @@ import HowItWorks from './pages/HowItWorks';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
-// import ChatPage from './pages/ChatPage';
 
 // Pages utilisateur
 // import OfferRide from './pages/OfferRide';
 import MyRides from './pages/conductuer/MyRides';
 import Reservations from './pages/conductuer/Reservations';
 import Profile from './pages/Profile';
-// import EditProfile from './pages/EditProfile';
 import My_Reservations from './pages/passager/My_Reservations';
-import Messaging from  "./pages/Messaging";
 import DriverDashboard from './pages/conductuer/DriverDashboard';
+import Chat from './pages/Chat';
 
 // Pages admin
 import Dashboard from './pages/admin/Dashboard';
-// import DriversSection from './pages/admin/DriversSection';
-// import Réclamations from './pages/admin/Réclamations';
-// import PaymentsSection from './pages/admin/PaymentsSection';
-// import AnalyticsSection from './pages/admin/AnalyticsSection';
-// import Settings from './admin/Settings';
+
 
 function App() {
   const { user ,loadingUser,logout } = useContext(AuthContext);
@@ -67,11 +60,12 @@ function App() {
   return (
     <Router>
       <Routes>
+        
+        <Route element={<PublicLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         
-        <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/about" element={<About />} />
@@ -95,9 +89,9 @@ function App() {
 
         {/* Routes communes pour utilisateurs authentifiés */}
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
-          <Route path="/Messaging" element={<Messaging />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat/:userId" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
-          {/* <Route path="/edit-profile" element={<EditProfile />} /> */}
         </Route>
 
         {/* Routes pour les administrateurs */}

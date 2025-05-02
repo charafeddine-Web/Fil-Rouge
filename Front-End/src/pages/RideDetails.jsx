@@ -201,8 +201,17 @@ const RideDetails = () => {
     return `${hours}h ${minutes}m`;
   };
 
+ 
   if (loading) {
-    return <Loader />;
+    return (
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
+    );
   }
 
   if (error) {

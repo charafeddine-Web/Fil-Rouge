@@ -18,7 +18,6 @@ const Profile = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [driverInfo, setDriverInfo] = useState(null);
   
-  // Use the file upload hook
   const { files, previews, handleFileChange, resetFiles, addFilesToFormData } = useFileUpload();
   
   const [profile, setProfile] = useState({
@@ -27,7 +26,7 @@ const Profile = () => {
     email: "",
     telephone: "",
     photoDeProfil: null,
-    // Driver specific fields
+    
     num_permis: "",
     disponibilite: false,
     adresse: "",
@@ -44,7 +43,6 @@ const Profile = () => {
     }
   });
   
-  // Load user data
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -58,12 +56,10 @@ const Profile = () => {
         const response = await getCurrentUser(token);
         const userData = response.data;
         console.log("waaaaaaaaaaa3",userData)
-        // If user is a driver, load additional driver information
         if (userData.role === 'conducteur') {
           try {
             const driverResponse = await getConducteurByUserId(userData.id);
             const driverData = driverResponse.data;
-            // Merge user data with driver data
             userData.conducteur = driverData;
           } catch (error) {
             console.error("Error loading driver data:", error);
@@ -155,23 +151,20 @@ const Profile = () => {
       
       console.log("Submitting profile update with data:", profile);
       
-      // Add basic user information
       formData.append('nom', profile.nom);
       formData.append('prenom', profile.prenom);
       formData.append('email', profile.email);
       formData.append('telephone', profile.telephone);
 
-      // Add driver specific information if user is a driver
       if (user?.role === 'conducteur') {
         formData.append('num_permis', profile.num_permis || '');
-        formData.append('disponibilite', profile.disponibilite ? '1' : '0'); // Convert boolean to string
+        formData.append('disponibilite', profile.disponibilite ? '1' : '0'); 
         formData.append('adresse', profile.adresse || '');
         formData.append('ville', profile.ville || '');
         formData.append('date_naissance', profile.date_naissance || '');
         formData.append('sexe', profile.sexe || '');
       }
 
-      // Add files to form data
       addFilesToFormData(formData);
 
       // Log form data for debugging
@@ -181,27 +174,22 @@ const Profile = () => {
       });
       console.log('Data being sent:', plainData);
 
-      // Use a SINGLE API call to update all profile data
       const response = await updateProfile(formData, token);
       console.log('Profile update response:', response);
 
       if (response.data) {
-        // After successful update, refresh user data
         const userResponse = await getCurrentUser(token);
         const userData = userResponse.data;
         console.log("Updated user data received:", userData);
         
-        // If user is a driver, load additional driver information
         if (userData.role === 'conducteur') {
           try {
             const driverResponse = await getConducteurByUserId(userData.id);
             const driverData = driverResponse.data;
             console.log("Driver data received:", driverData);
             
-            // Merge user data with driver data
             userData.conducteur = driverData;
             
-            // Update driver info state
             setDriverInfo(driverData);
           } catch (error) {
             console.error("Error loading driver data:", error);
@@ -209,7 +197,6 @@ const Profile = () => {
           }
         }
 
-        // Update profile state with new data
         setProfile({
           nom: userData.nom || "",
           prenom: userData.prenom || "",
@@ -233,16 +220,12 @@ const Profile = () => {
           }
         });
         
-        // Reset file uploads after successful update
         resetFiles();
 
-        // Update user context
         setUser(userData);
         
-        // Update user in localStorage
         localStorage.setItem('user', JSON.stringify(userData));
 
-        // Exit edit mode and show success message
         setIsEditing(false);
         setSaveSuccess(true);
         toast.success(response.data.message || "Profile updated successfully!");
@@ -261,9 +244,16 @@ const Profile = () => {
     }
   };
   
+ 
   if (isLoading) {
     return (
-      <Loader/>
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
     );
   }
   

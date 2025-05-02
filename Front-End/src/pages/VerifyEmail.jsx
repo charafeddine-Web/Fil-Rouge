@@ -19,7 +19,7 @@ const VerifyEmail = () => {
       toast.success("Email verified successfully!");
       navigate("/login");
     } catch (error) {
-        console.error(error.response); // <-- Voir le détail de l'erreur Laravel
+        console.error(error.response);
       toast.error("Invalid code or verification failed.");
     } finally {
       setLoading(false);

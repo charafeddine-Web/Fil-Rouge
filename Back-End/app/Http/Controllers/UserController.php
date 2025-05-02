@@ -38,7 +38,7 @@ class UserController extends Controller
                 'password' => 'nullable|string|min:6|confirmed',
                 'photoDeProfil' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-                'num_permis' => 'nullable|string|required_if:role,conducteur|unique:conducteurs,num_permis,' . $user->id,
+                'num_permis' => 'nullable|string|required_if:role,conducteur,' . $user->id,
                 'adresse' => 'nullable|required_if:role,conducteur|string|max:255',
                 'ville' => 'nullable|required_if:role,conducteur|string|max:255',
                 'date_naissance' => 'nullable|required_if:role,conducteur|date',

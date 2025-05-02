@@ -8,8 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
-use App\Http\Controllers\MessageController;
-use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminController;
 
 
@@ -19,6 +17,7 @@ Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
@@ -84,14 +83,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/reservations/{id}', [ReservationController::class, 'update']);
     Route::patch('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
 
-    Route::post('/messages', [MessageController::class, 'send']);
     Route::get('/users', [UserController::class, 'index']);
 
-    // Chat routes
-    Route::post('/chat/send', [ChatController::class, 'sendMessage']);
-    Route::get('/chat/messages/{userId}', [ChatController::class, 'getMessages']);
-    Route::get('/chat/messages/all', [ChatController::class, 'getAllMessages']);
-    Route::patch('/chat/messages/{messageId}/read', [ChatController::class, 'markAsRead']);
+
 
     // User routes
     Route::get('/users/{id}', [UserController::class, 'show']);
@@ -100,4 +94,33 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Routes for reviews
 //    Route::get('/avis/reservation/{reservationId}', [AvisController::class, 'getReviewByReservation']);
+
+    // Chat and messaging routes
+    Route::get('/chatify/getUnreadMessagesCount', 'App\Http\Controllers\Api\ChatController@getUnreadMessagesCount');
+    Route::get('/chatify/contacts', 'App\Http\Controllers\Api\ChatController@getContacts');
+    Route::get('/chatify/relevant-contacts', 'App\Http\Controllers\Api\ChatController@getRelevantContacts');
+    Route::post('/chatify/fetchMessages', 'App\Http\Controllers\Api\ChatController@fetchMessages');
+    Route::post('/chatify/sendMessage', 'App\Http\Controllers\Api\ChatController@sendMessage');
+    Route::post('/chatify/makeSeen', 'App\Http\Controllers\Api\ChatController@makeSeen');
+    Route::get('/chatify/authUser', 'App\Http\Controllers\Api\ChatController@getAuthUser');
+
+    // Direct message fallback routes
+    Route::post('/api/chatify/sendMessage', 'App\Http\Controllers\Api\ChatController@sendMessageDirect');
+    Route::get('/api/chatify/directMessages/{userId}', 'App\Http\Controllers\Api\ChatController@getDirectMessages');
+
+    // Driver-specific message routes
+    Route::get('/api/chatify/driverMessages/{passengerId}', 'App\Http\Controllers\Api\ChatController@getDriverMessages');
+    Route::post('/api/chatify/sendDriverMessage', 'App\Http\Controllers\Api\ChatController@sendDriverMessage');
+
+    // Chat user routes
+    Route::get('/users/chat/{id}', 'App\Http\Controllers\Api\ChatController@getUserById');
+    Route::get('/users/{id}', [UserController::class, 'show']);
 });
+
+// Add a ping endpoint to check if the backend is accessible
+Route::get('/ping', function () {
+    return response()->json(['status' => 'ok']);
+});
+
+
+

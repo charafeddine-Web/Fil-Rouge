@@ -97,7 +97,7 @@ const SearchRides = ({user}) => {
     }
   };
   
-  // Apply filters when they change (but only after initial search has been done)
+  // Apply filters when they change 
   useEffect(() => {
     if (hasSearched) {
       const applyFilters = async () => {
@@ -128,7 +128,6 @@ const SearchRides = ({user}) => {
         }
       };
 
-      // Use a debounce to avoid too many API calls when filters change
       const debounceTimeout = setTimeout(() => {
         applyFilters();
       }, 500);
@@ -213,8 +212,17 @@ const SearchRides = ({user}) => {
     return `${hours}h ${minutes}m`;
   };
 
+  
   if (loading) {
-    return <Loader />;
+    return (
+      <>
+        <Header/>
+        <div className="my-20">
+        <Loader/>
+        </div>
+        <Footer/> 
+      </>   
+    );
   }
 
   const mappedRides = filteredRides.map(ride => ({
