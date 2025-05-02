@@ -9,11 +9,28 @@ class Message extends Model
 {
     use HasFactory;
 
+    protected $table = 'messages';
+    
+    // Set incrementing to true for auto-incrementing ID
+    public $incrementing = true;
+    
+    // Set ID type to bigInteger
+    protected $keyType = 'int';
+
     protected $fillable = [
         'sender_id',
         'receiver_id',
-        'message',
-        'is_read'
+        'from_id',
+        'to_id',
+        'content',
+        'body',
+        'is_read',
+        'seen'
+    ];
+
+    protected $casts = [
+        'is_read' => 'boolean',
+        'seen' => 'boolean',
     ];
 
     public function sender()

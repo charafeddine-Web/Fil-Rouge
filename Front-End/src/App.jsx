@@ -29,6 +29,7 @@ import Profile from './pages/Profile';
 import My_Reservations from './pages/passager/My_Reservations';
 import DriverDashboard from './pages/conductuer/DriverDashboard';
 import Chat from './pages/Chat';
+import RealtimeChat from './pages/RealtimeChat';
 
 // Pages admin
 import Dashboard from './pages/admin/Dashboard';
@@ -91,6 +92,8 @@ function App() {
         <Route element={<PrivateRoute><UserLayout /></PrivateRoute>}>
           <Route path="/chat" element={<Chat />} />
           <Route path="/chat/:userId" element={<Chat />} />
+          <Route path="/realtime-chat" element={<RealtimeChat />} />
+          <Route path="/realtime-chat/:userId" element={<RealtimeChat />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 

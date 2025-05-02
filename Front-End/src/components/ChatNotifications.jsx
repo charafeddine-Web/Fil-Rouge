@@ -1,181 +1,211 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { getEcho, subscribeToUserChannel } from '../services/echo';
 import api from '../services/api';
-import { getEcho } from '../services/echo';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBell, faCircle, faEnvelope } from '@fortawesome/free-solid-svg-icons';
 
 const ChatNotifications = () => {
-  const { isAuthenticated, user } = useContext(AuthContext);
+  const { user, isAuthenticated } = useContext(AuthContext);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [error, setError] = useState(false);
-  const [shouldRetry, setShouldRetry] = useState(true);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [recentMessages, setRecentMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+  // Fetch unread message count
+  const fetchUnreadCount = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await api.get('/messages/unread/count');
+      if (response.data && response.data.count !== undefined) {
+        setUnreadCount(response.data.count);
+      }
+    } catch (error) {
+      console.error('Error fetching unread message count:', error);
+    }
+  };
+
+  // Fetch recent messages
+  const fetchRecentMessages = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      setLoading(true);
+      const response = await api.get('/messages/contacts');
+      
+      if (response.data && response.data.contacts) {
+        // Sort by unread count and only keep the ones with unread messages
+        const unreadContacts = response.data.contacts
+          .filter(contact => contact.unread > 0)
+          .sort((a, b) => b.unread - a.unread)
+          .slice(0, 5);  // Limit to 5 recent unread conversations
+          
+        setRecentMessages(unreadContacts);
+      }
+    } catch (error) {
+      console.error('Error fetching recent messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize and fetch data
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      
+      // Set up polling for unread count
+      const intervalId = setInterval(fetchUnreadCount, 60000); // Every minute
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [isAuthenticated]);
+
+  // Fetch recent messages when dropdown is opened
+  useEffect(() => {
+    if (showDropdown) {
+      fetchRecentMessages();
+    }
+  }, [showDropdown]);
+
+  // Subscribe to real-time updates
   useEffect(() => {
     if (!isAuthenticated || !user) return;
-
-    let isMounted = true;
-    let retryCount = 0;
-    const MAX_RETRIES = 3;
-    const MIN_FETCH_INTERVAL = 30000; // 30 seconds between fetches
-
-    // Fetch unread count with backoff strategy
-    const fetchUnreadCount = async () => {
-      // Skip if too many retries or too soon since last fetch
-      const now = Date.now();
-      if (!shouldRetry || retryCount >= MAX_RETRIES) {
-        if (isMounted) {
-          setError(true);
-          // Stop retrying after max attempts to avoid console spam
-          setShouldRetry(false);
-        }
-        return;
-      }
-      
-      if (now - lastFetchTime < MIN_FETCH_INTERVAL && lastFetchTime !== 0) {
-        // Skip this fetch since it's too soon
-        return;
-      }
-      
-      setLastFetchTime(now);
-
-      try {
-        // First try: Standard endpoint
-        try {
-          const response = await api.get('/chatify/getUnreadMessagesCount');
-          if (response.data && response.data.status && isMounted) {
-            setUnreadCount(response.data.count);
-            setError(false);
-            retryCount = 0; // Reset retry counter on success
-            return;
-          }
-        } catch (error) {
-          // Only log first error to avoid console spam
-          if (retryCount === 0) {
-            console.warn('Primary unread count endpoint failed, trying alternatives');
-          }
-        }
-        
-        // Second try: Alternative - count from contacts
-        try {
-          const contactsResponse = await api.get('/chatify/relevant-contacts');
-          if (contactsResponse.data && contactsResponse.data.status && isMounted) {
-            const contacts = contactsResponse.data.contacts || [];
-            const totalUnread = contacts.reduce((sum, contact) => sum + (contact.unread || 0), 0);
-            setUnreadCount(totalUnread);
-            setError(false);
-            retryCount = 0; // Reset retry counter on success
-            return;
-          }
-        } catch (altError) {
-          // Don't log to avoid console spam
-        }
-        
-        // Third try: Check direct messages table
-        try {
-          const debugResponse = await api.get('/debug/chat');
-          if (debugResponse.data && debugResponse.data.status === 'ok' && isMounted) {
-            // Just knowing the system is working is good enough
-            setError(false);
-            return;
-          }
-        } catch (debugError) {
-          // Don't log to avoid console spam
-        }
-
-        if (isMounted) {
-          retryCount++;
-          // Exponential backoff for retries
-          if (shouldRetry) {
-            const backoffTime = Math.min(5000 * Math.pow(2, retryCount), 30000);
-            setTimeout(fetchUnreadCount, backoffTime);
-          }
-        }
-      } catch (error) {
-        if (retryCount === 0 && isMounted) {
-          console.warn('Error fetching unread message count:', error.message);
-        }
-        
-        if (isMounted) {
-          retryCount++;
-          if (shouldRetry) {
-            const backoffTime = Math.min(5000 * Math.pow(2, retryCount), 30000);
-            setTimeout(fetchUnreadCount, backoffTime);
-          }
-        }
-      }
-    };
-
-    // Initial fetch
-    fetchUnreadCount();
-
-    // Setup a less frequent polling interval (60s)
-    const intervalId = setInterval(() => {
-      if (shouldRetry) {
-        fetchUnreadCount();
-      }
-    }, 60000); // Check every minute instead of every 30 seconds
-
-    // Listen for new messages with Echo (real-time updates)
+    
+    // Get Echo instance
     const echo = getEcho();
-    if (echo) {
-      try {
-        const channel = echo.private('chatify');
-        
-        channel.listen('.message.created', (data) => {
-          // If message is to the current user and not from them
-          if (data.to_id === user.id && data.from_id !== user.id && isMounted) {
-            setUnreadCount(prev => prev + 1);
-          }
-        });
-      } catch (echoError) {
-        // Echo error is non-critical since we have polling
-        console.warn('Error setting up Echo listener:', echoError.message);
+    if (!echo) return;
+    
+    // Subscribe to user's channel
+    subscribeToUserChannel(user.id, (data) => {
+      // Increment unread count when new message received
+      setUnreadCount(prev => prev + 1);
+      
+      // Refetch recent messages if dropdown is open
+      if (showDropdown) {
+        fetchRecentMessages();
       }
-    }
-
+    });
+    
     return () => {
-      isMounted = false;
-      clearInterval(intervalId);
+      // Cleanup Echo subscription
       if (echo) {
-        try {
-          echo.private('chatify').stopListening('.message.created');
-        } catch (error) {
-          // Don't log cleanup errors
-        }
+        echo.leave(`private-user.${user.id}`);
       }
     };
-  }, [isAuthenticated, user, shouldRetry, lastFetchTime]);
+  }, [isAuthenticated, user, showDropdown]);
+
+  // Toggle dropdown
+  const toggleDropdown = () => {
+    setShowDropdown(prev => !prev);
+  };
+
+  // Format name
+  const formatName = (name) => {
+    if (!name) return 'Utilisateur';
+    if (name.length > 18) {
+      return name.substring(0, 15) + '...';
+    }
+    return name;
+  };
 
   if (!isAuthenticated) return null;
 
   return (
-    <Link 
-      to="/chat" 
-      className="relative flex items-center"
-      onClick={() => setUnreadCount(0)} // Reset count when clicked
-    >
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        className="h-6 w-6 text-blue-600" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor"
+    <div className="relative">
+      <button 
+        className="relative p-1 rounded-full text-gray-600 hover:text-blue-500 focus:outline-none"
+        onClick={toggleDropdown}
+        aria-label="Notifications de messages"
       >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth={1.5} 
-          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" 
-        />
-      </svg>
+        <FontAwesomeIcon icon={faBell} className="text-lg" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
       
-      {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-          {unreadCount > 9 ? '9+' : unreadCount}
-        </span>
+      {showDropdown && (
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden border border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold text-gray-700">Messages non lus</h3>
+              <Link 
+                to="/chat" 
+                className="text-xs text-blue-500 hover:text-blue-700"
+                onClick={() => setShowDropdown(false)}
+              >
+                Voir tous
+              </Link>
+            </div>
+          </div>
+          
+          <div className="max-h-80 overflow-y-auto">
+            {loading ? (
+              <div className="p-4 text-center text-gray-500">
+                <div className="w-6 h-6 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin mx-auto mb-2"></div>
+                Chargement...
+              </div>
+            ) : recentMessages.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                <FontAwesomeIcon icon={faEnvelope} className="text-gray-300 text-2xl mb-2" />
+                <p>Pas de messages non lus</p>
+              </div>
+            ) : (
+              <ul>
+                {recentMessages.map(contact => (
+                  <li key={contact.id} className="border-b border-gray-100 last:border-0">
+                    <Link 
+                      to={`/chat/${contact.id}`} 
+                      className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <div className="flex items-center">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                            {contact.avatar ? (
+                              <img 
+                                src={contact.avatar} 
+                                alt={contact.name} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-lg font-semibold text-gray-600">
+                                {contact.name ? contact.name.charAt(0).toUpperCase() : '?'}
+                              </span>
+                            )}
+                          </div>
+                          <FontAwesomeIcon 
+                            icon={faCircle} 
+                            className="absolute -bottom-1 -right-1 text-xs text-blue-500" 
+                          />
+                        </div>
+                        <div className="ml-3 flex-1">
+                          <div className="flex justify-between">
+                            <span className="font-medium text-gray-800">{formatName(contact.name)}</span>
+                            <span className="text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
+                              {contact.unread}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {contact.role === 'conducteur' ? 'Conducteur' : 
+                             contact.role === 'passager' ? 'Passager' : 
+                             'Utilisateur'}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       )}
-    </Link>
+    </div>
   );
 };
 

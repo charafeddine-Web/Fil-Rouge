@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\UserController as ApiUserController;
+use App\Http\Controllers\Api\Auth\AuthController as ApiAuthController;
+use App\Http\Controllers\Api\Auth\LogoutController as ApiLogoutController;
+use App\Http\Controllers\Api\Auth\RegisterController as ApiRegisterController;
+use App\Http\Controllers\Api\Auth\ForgotPasswordController as ApiForgotPasswordController;
+use App\Http\Controllers\Api\Auth\VerificationController as ApiVerificationController;
+use App\Http\Controllers\Api\Auth\ResetPasswordController as ApiResetPasswordController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -96,30 +103,49 @@ Route::middleware('auth:sanctum')->group(function () {
 //    Route::get('/avis/reservation/{reservationId}', [AvisController::class, 'getReviewByReservation']);
 
     // Chat and messaging routes
-    Route::get('/chatify/getUnreadMessagesCount', 'App\Http\Controllers\Api\ChatController@getUnreadMessagesCount');
-    Route::get('/chatify/contacts', 'App\Http\Controllers\Api\ChatController@getContacts');
-    Route::get('/chatify/relevant-contacts', 'App\Http\Controllers\Api\ChatController@getRelevantContacts');
-    Route::post('/chatify/fetchMessages', 'App\Http\Controllers\Api\ChatController@fetchMessages');
-    Route::post('/chatify/sendMessage', 'App\Http\Controllers\Api\ChatController@sendMessage');
-    Route::post('/chatify/makeSeen', 'App\Http\Controllers\Api\ChatController@makeSeen');
-    Route::get('/chatify/authUser', 'App\Http\Controllers\Api\ChatController@getAuthUser');
-
-    // Direct message fallback routes
-    Route::post('/api/chatify/sendMessage', 'App\Http\Controllers\Api\ChatController@sendMessageDirect');
-    Route::get('/api/chatify/directMessages/{userId}', 'App\Http\Controllers\Api\ChatController@getDirectMessages');
-
-    // Driver-specific message routes
-    Route::get('/api/chatify/driverMessages/{passengerId}', 'App\Http\Controllers\Api\ChatController@getDriverMessages');
-    Route::post('/api/chatify/sendDriverMessage', 'App\Http\Controllers\Api\ChatController@sendDriverMessage');
-
-    // Chat user routes
-    Route::get('/users/chat/{id}', 'App\Http\Controllers\Api\ChatController@getUserById');
-    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::get('/messages/contacts', 'App\Http\Controllers\MessageController@getContacts');
+    Route::get('/messages/{userId}', 'App\Http\Controllers\MessageController@getMessages');
+    Route::post('/messages', 'App\Http\Controllers\MessageController@sendMessage');
+    Route::get('/messages/unread/count', 'App\Http\Controllers\MessageController@getUnreadCount');
+    Route::post('/messages/read', 'App\Http\Controllers\MessageController@markAsRead');
+    Route::post('/messages/contact', 'App\Http\Controllers\MessageController@addContact');
 });
 
 // Add a ping endpoint to check if the backend is accessible
 Route::get('/ping', function () {
     return response()->json(['status' => 'ok']);
+});
+
+// Test broadcasting endpoint
+Route::middleware('auth:sanctum')->get('/test-broadcast', function () {
+    broadcast(new \App\Events\NewChatMessage([
+        'id' => 1,
+        'from_id' => auth()->id(),
+        'to_id' => request('user_id'),
+        'body' => 'Test message from broadcast',
+        'created_at' => now(),
+        'updated_at' => now(),
+        'seen' => 0,
+    ]));
+    
+    return response()->json(['status' => true, 'message' => 'Test broadcast sent']);
+});
+
+// Broadcasting auth endpoint
+Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
+    $pusher = new \Pusher\Pusher(
+        env('PUSHER_APP_KEY'),
+        env('PUSHER_APP_SECRET'),
+        env('PUSHER_APP_ID'),
+        [
+            'cluster' => env('PUSHER_APP_CLUSTER'),
+            'useTLS' => true
+        ]
+    );
+    
+    $auth = $pusher->socket_auth($request->channel_name, $request->socket_id);
+    
+    return response()->json(json_decode($auth));
 });
 
 

@@ -15,54 +15,26 @@ const MessageDriverButton = ({ driverId, driverName, className }) => {
     // Vérifier si l'utilisateur est authentifié
     if (!isAuthenticated) {
       toast.error('Vous devez être connecté pour contacter le conducteur');
-      navigate('/login', { state: { redirectTo: `/chat/${driverId}` } });
+      navigate('/login');
       return;
     }
     
-    console.log(`Attempting to contact driver ${driverId} (${driverName || 'Unknown'})`);
+    console.log(`Attempting to contact driver ${driverId} (${driverName})`);
     
-    // Always navigate to the chat even if API calls fail
-    const openChat = () => {
-      // Rediriger vers la conversation avec ce conducteur
-      navigate(`/chat/${driverId}`);  
-      toast.success(`Conversation avec ${driverName || 'le conducteur'} ouverte`);
-    };
-
     try {
-      // Validate the driver exists before attempting to add contact
-      try {
-        await api.get(`/users/chat/${driverId}`);
-      } catch (userError) {
-        console.warn(`Could not validate driver ${driverId}, but continuing:`, userError);
-      }
+      setLoading(true);
       
-      // Première tentative : Ajouter le contact via Chatify
-      try {
-        await api.post('/chatify/addContact', { user_id: driverId });
-        openChat();
-      } catch (chatifyError) {
-        console.warn('Error with Chatify addContact, trying API ChatController:', chatifyError);
-        
-        // Deuxième tentative : Utiliser le ChatController standard
-        try {
-          await api.post('/chat/addContact', { user_id: driverId });
-          openChat();
-        } catch (chatControllerError) {
-          console.warn('Error with ChatController, proceeding anyway:', chatControllerError);
-          // Continue anyway - we'll just navigate to the chat page
-          openChat();
-        }
-      }
+      // Ajouter le conducteur comme contact
+      await api.post('/messages/contact', { user_id: driverId });
+      
+      // Naviguer vers la page de chat
+      navigate(`/chat/${driverId}`);
     } catch (error) {
-      console.error('Erreur lors de l\'ouverture de la conversation:', error);
-      
-      // Even if we had an error, still try to navigate to chat
-      if (error.response && error.response.status === 403) {
-        toast.error('Vous ne pouvez pas contacter ce conducteur car vous n\'avez pas de réservation avec lui.');
-      } else {
-        toast.warning('Redirection vers la messagerie. La conversation pourrait ne pas être initialisée correctement.');
-        openChat();
-      }
+      console.error('Error with adding contact, proceeding anyway:', error);
+      // Still try to navigate to chat even if adding contact fails
+      navigate(`/chat/${driverId}`);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,6 +1,5 @@
 <?php
 
-use Chatify\Facades\ChatifyMessenger;
 use Illuminate\Support\Facades\Route;
 
 /*

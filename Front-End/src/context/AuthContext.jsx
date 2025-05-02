@@ -54,5 +54,4 @@ export const AuthContext = createContext();
       {children}
     </AuthContext.Provider>
   );
-};
-export default AuthProvider;
+};export default AuthProvider;
