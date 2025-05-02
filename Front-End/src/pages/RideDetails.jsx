@@ -49,7 +49,7 @@ const RideDetails = () => {
             prenom: rideData.conducteur?.user?.prenom || 'Unknown Driver',
             rating: rideData.conducteur?.note_moyenne || 0.0,
             reviewCount: rideData.conducteur?.review_count || 0,
-            image: rideData.conducteur?.user?.photoDeProfil || '/placeholder-avatar.jpg',
+            image: rideData.conducteur?.user?.photoDeProfil || null,
             joinedDate: new Date(rideData.conducteur?.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
             verifiedDriver: true,
           },
@@ -123,7 +123,7 @@ const RideDetails = () => {
         passager_id: user.id,
         nombre_places: seats,
         places_reservees: seats,
-        prix_total: ride.prix_par_place * seats,
+        prix_total: ride.price * seats,
         status: 'en_attente',
         date_reservation: new Date().toISOString(),
         message: "I would like to book this ride"
@@ -222,7 +222,7 @@ const RideDetails = () => {
           <div className="text-center p-8">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Error</h1>
             <p className="text-gray-600 mb-6">{error}</p>
-            <Link to="/offer-ride">
+            <Link to="/search">
               <Button>Back to Search</Button>
             </Link>
           </div>
@@ -240,7 +240,7 @@ const RideDetails = () => {
           <div className="text-center p-8">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Ride Not Found</h1>
             <p className="text-gray-600 mb-6">The ride you're looking for doesn't exist or has been removed.</p>
-            <Link to="/offer-ride">
+            <Link to="/search">
               <Button>Search for Rides</Button>
             </Link>
           </div>
@@ -252,8 +252,7 @@ const RideDetails = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      
-      <div className="container mx-auto px-4 py-8 flex-grow">
+         <div className="container mx-auto px-4 py-8 flex-grow">
         {/* Breadcrumb Navigation */}
         <div className="mb-6">
           <nav className="flex" aria-label="Breadcrumb">
@@ -327,11 +326,18 @@ const RideDetails = () => {
                 <div className="p-6">
                   {/* Driver Information */}
                   <div className="flex items-center mb-6">
-                    <img
-                      src={ride.driver.image}
-                      alt={ride.driver.name}
-                      className="w-16 h-16 rounded-full object-cover mr-4"
-                    />
+                    {ride.driver.image ? (
+                      <img
+                        src={ride.driver.image}
+                        alt={ride.driver.name}
+                        className="w-16 h-16 rounded-full object-cover mr-4"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-400 to-green-500 flex items-center justify-center text-white font-bold mr-4 text-xl">
+                        {ride.driver.name && ride.driver.name.charAt(0).toUpperCase()}
+                        {ride.driver.prenom && ride.driver.prenom.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <h2 className="text-xl font-semibold">{ride.driver.name} {ride.driver.prenom}</h2>
                       <div className="flex items-center">
@@ -426,8 +432,9 @@ const RideDetails = () => {
                       value={seats}
                       onChange={(e) => setSeats(parseInt(e.target.value))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      disabled={ride.availableSeats <= 0}
                     >
-                      {[...Array(ride.availableSeats)].map((_, i) => (
+                      {[...Array(Math.max(1, ride.availableSeats))].map((_, i) => (
                         <option key={i + 1} value={i + 1}>
                           {i + 1} {i === 0 ? 'seat' : 'seats'}
                         </option>
@@ -436,6 +443,7 @@ const RideDetails = () => {
                   </div>
 
                   <div className="mb-6">
+                    <p className="text-sm font-medium text-gray-700">Total</p>
                     <p className="text-2xl font-bold text-gray-800">
                       {ride.price * seats} MAD
                     </p>
@@ -446,13 +454,13 @@ const RideDetails = () => {
                     className="w-full"
                     disabled={ride.availableSeats <= 0}
                   >
-                    {ride.availableSeats > 0 ? 'Book' : 'Full'}
+                    {ride.availableSeats > 0 ? 'Book Now' : 'Fully Booked'}
                   </Button>
                 </form>
 
                 {ride.availableSeats <= 0 && (
                   <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md text-center">
-                    This ride is full. All seats are booked.
+                    This ride is fully booked. No seats available.
                   </div>
                 )}
 
@@ -465,7 +473,6 @@ const RideDetails = () => {
           </div>
         </div>
       </div>
-      
     </div>
   );
 };

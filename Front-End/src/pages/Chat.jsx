@@ -11,7 +11,6 @@ import Loader from '../components/Loader';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane, faArrowLeft, faCircle, faUserCircle, faSmile } from '@fortawesome/free-solid-svg-icons';
 
-// Emojis pour améliorer l'expérience
 const EMOJIS = ['😊', '👍', '👋', '🚗', '🙏', '👌', '✅', '⭐', '🔥', '😂'];
 
 // Create a global message cache to persist across component unmounts
@@ -36,13 +35,11 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const chatRef = useRef(null);
   
-  // Create a cache key for the active conversation
   const cacheKey = useMemo(() => {
     if (!activeContact || !user) return null;
     return `chat_${user.id}_${activeContact.id}`;
   }, [activeContact, user]);
   
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error('Vous devez être connecté pour accéder aux messages');
@@ -70,7 +67,6 @@ const Chat = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [userId, activeContact]);
   
-  // Fetch contacts
   const fetchContacts = async (skipLoadingState = false) => {
     if (!isAuthenticated) return;
     
@@ -120,14 +116,12 @@ const Chat = () => {
     }
   };
   
-  // Load contacts on component mount
   useEffect(() => {
     if (isAuthenticated) {
       fetchContacts();
       
-      // Set up background contact refresh
       const intervalId = setInterval(() => {
-        fetchContacts(true); // Skip loading state for background refresh
+        fetchContacts(true); 
       }, 30000);
       
       return () => clearInterval(intervalId);
@@ -149,16 +143,13 @@ const Chat = () => {
     try {
       const response = await api.get(`/users/${id}`);
       
-      // Handle different response formats
       let userData = null;
       
       if (response.data && response.data.user) {
         userData = response.data.user;
       } else if (response.data && response.data.id) {
-        // Direct user object in response
         userData = response.data;
       } else if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        // Array of users (take the first one matching the ID)
         userData = response.data.find(u => u.id.toString() === id.toString());
       }
       
@@ -166,7 +157,6 @@ const Chat = () => {
         throw new Error('User data not found in response');
       }
       
-      // Create contact info from user data
       const displayName = userData.name || 
                          (userData.nom && userData.prenom ? `${userData.nom} ${userData.prenom}` : '') ||
                          userData.email || 
@@ -187,7 +177,6 @@ const Chat = () => {
         setContacts(prev => [...prev, contactInfo]);
       }
       
-      // Add contact
       try {
         await api.post('/messages/contact', { user_id: id });
       } catch (error) {
@@ -207,11 +196,9 @@ const Chat = () => {
   useEffect(() => {
     if (!user || !isAuthenticated) return;
 
-    // Forcer une réinitialisation d'Echo au montage du composant
     reinitializeEcho();
     console.log("Réinitialisation d'Echo pour assurer la connexion en temps réel");
 
-    // Vérifier l'état de la connexion périodiquement
     const pingInterval = setInterval(() => {
       const echoInstance = getEcho();
       if (echoInstance && echoInstance.connector && echoInstance.connector.pusher) {
@@ -221,27 +208,23 @@ const Chat = () => {
           reinitializeEcho();
         }
       }
-    }, 15000); // Vérifier toutes les 15 secondes
+    }, 15000); 
 
     return () => clearInterval(pingInterval);
   }, [user, isAuthenticated]);
 
-  // Modifier cette fonction pour debugger les messages reçus en temps réel
   const handleNewMessage = useCallback((data) => {
     console.log('🚨 Nouveau message reçu dans Chat.jsx:', data);
     
-    // Handle different message formats
     let message = data;
     
     if (data.message) {
       message = data.message;
     }
     
-    // Get IDs using different possible field names
     const senderId = message.sender_id || message.from_id;
     const receiverId = message.receiver_id || message.to_id;
     
-    // Normalize the message format before processing
     const normalizedMessage = {
       ...message,
       sender_id: senderId,
@@ -257,17 +240,14 @@ const Chat = () => {
     // If message is from active contact, add it to messages
     if (activeContact && (senderId === activeContact.id || senderId.toString() === activeContact.id.toString())) {
       setMessages(prev => {
-        // Check if this message already exists
         const exists = prev.some(m => m.id === normalizedMessage.id);
         if (exists) {
           console.log('Message déjà présent, ignoré');
           return prev;
         }
         
-        // Log addition of new message
         console.log('Ajout du nouveau message à la conversation');
         
-        // Update the cache with the new message
         const newMessages = [...prev, normalizedMessage];
         if (cacheKey) {
           messageCache.set(cacheKey, newMessages);
@@ -276,14 +256,12 @@ const Chat = () => {
         return newMessages;
       });
       
-      // Mark as read
       api.post('/messages/read', { from_id: activeContact.id })
         .catch(error => console.warn('Error marking message as read:', error));
     } else {
       console.log('Message non destiné à la conversation active ou pas de contact actif');
     }
     
-    // Update unread count for contact
     setContacts(prev => 
       prev.map(contact => {
         if (contact.id === senderId || contact.id.toString() === senderId.toString()) {
@@ -303,7 +281,6 @@ const Chat = () => {
   useEffect(() => {
     if (!user || !isAuthenticated) return;
     
-    // Initialize Echo if needed
     const echo = getEcho();
     if (!echo) {
       console.error("Echo n'est pas initialisé, impossible d'écouter les messages");
@@ -329,11 +306,9 @@ const Chat = () => {
     };
   }, [user, isAuthenticated, handleNewMessage, activeContact]);
 
-  // Remplacer l'effet d'écoute des conversations par cette version
   useEffect(() => {
     if (!user || !isAuthenticated || !activeContact) return;
     
-    // Initialize Echo if needed
     const echo = getEcho();
     if (!echo) {
       console.error("Echo n'est pas initialisé, impossible d'écouter la conversation");
@@ -342,11 +317,9 @@ const Chat = () => {
     
     console.log(`Configuration de l'écoute pour la conversation avec ${activeContact.name} (ID: ${activeContact.id})`);
     
-    // Make sure we're listening to both channel combinations
     const channel1 = subscribeToConversation(user.id, activeContact.id, handleNewMessage);
     const channel2 = subscribeToConversation(activeContact.id, user.id, handleNewMessage);
     
-    // Clean up
     return () => {
       leaveChannel(`private-chat.${user.id}.${activeContact.id}`);
       leaveChannel(`private-chat.${activeContact.id}.${user.id}`);
@@ -361,7 +334,6 @@ const Chat = () => {
       try {
         setLoading(true);
         
-        // Check if we have cached messages
         if (messageCache.has(cacheKey)) {
           console.log('Using cached messages for', cacheKey);
           setMessages(messageCache.get(cacheKey));
@@ -376,19 +348,15 @@ const Chat = () => {
           const fetchedMessages = response.data.messages;
           setMessages(fetchedMessages);
           
-          // Cache the messages
           messageCache.set(cacheKey, fetchedMessages);
         } else {
           setMessages([]);
-          // Clear cache for this conversation
           messageCache.delete(cacheKey);
         }
         
-        // Mark as read
         try {
           await api.post('/messages/read', { from_id: activeContact.id });
           
-          // Update contact's unread count
           setContacts(prev => 
             prev.map(contact => 
               contact.id === activeContact.id ? { ...contact, unread: 0 } : contact
@@ -409,18 +377,15 @@ const Chat = () => {
     
     fetchMessages();
     
-    // Update the URL without reloading
     navigate(`/chat/${activeContact.id}`, { replace: true });
   }, [activeContact, navigate, cacheKey]);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
   
-  // Handle sending message
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
@@ -437,7 +402,7 @@ const Chat = () => {
         sender_id: user?.id,
         receiver_id: activeContact.id,
         content: messageText.trim(),
-        body: messageText.trim(), // Include both field names for compatibility
+        body: messageText.trim(), 
         created_at: new Date().toISOString(),
         seen: false,
         temporary: true,
@@ -451,11 +416,9 @@ const Chat = () => {
         }
       };
       
-      // Add to messages immediately for better UX
       setMessages(prev => {
         const newMessages = [...prev, tempMessage];
         
-        // Update cache
         if (cacheKey) {
           messageCache.set(cacheKey, newMessages);
         }
@@ -463,23 +426,19 @@ const Chat = () => {
         return newMessages;
       });
       
-      // Clear the input so user can type the next message
       setMessageText('');
       
-      // Send the message
       const response = await api.post('/messages', {
         to_id: activeContact.id,
         content: messageText.trim()
       });
       
       if (response.data && response.data.message) {
-        // Replace the temporary message with the real one from server
         setMessages(prev => {
           const newMessages = prev.map(msg => 
             msg.id === tempMessage.id ? response.data.message : msg
           );
           
-          // Update cache
           if (cacheKey) {
             messageCache.set(cacheKey, newMessages);
           }
@@ -495,11 +454,9 @@ const Chat = () => {
       console.error('Error sending message:', error);
       setSending(false);
       
-      // Remove the temporary message if sending failed
       setMessages(prev => {
         const newMessages = prev.filter(msg => !msg.temporary);
         
-        // Update cache
         if (cacheKey) {
           messageCache.set(cacheKey, newMessages);
         }
@@ -511,7 +468,6 @@ const Chat = () => {
     }
   };
   
-  // Format message time
   const formatMessageTime = (timestamp) => {
     try {
       return format(new Date(timestamp), 'HH:mm');
@@ -520,23 +476,19 @@ const Chat = () => {
     }
   };
   
-  // Handle contact select
   const handleContactSelect = (contact) => {
     setActiveContact(contact);
     
-    // On mobile, hide contacts list
     if (window.innerWidth < 768) {
       setShouldShowContacts(false);
     }
   };
   
-  // Handle retry
   const handleRetry = () => {
     setError(null);
     fetchContacts();
   };
   
-  // Handle back to contacts
   const handleBackToContacts = () => {
     setShouldShowContacts(true);
   };
@@ -605,7 +557,9 @@ const Chat = () => {
                                 />
                               ) : (
                                 <span className="text-lg font-semibold text-white">
-                                  {contact.name ? contact.name.charAt(0).toUpperCase() : '?'}
+                                  {contact.name && contact.name.includes(' ') 
+                                    ? `${contact.name.split(' ')[0].charAt(0).toUpperCase()}${contact.name.split(' ')[1].charAt(0).toUpperCase()}`
+                                    : contact.name ? contact.name.charAt(0).toUpperCase() : '?'}
                                 </span>
                               )}
                             </div>
@@ -668,7 +622,9 @@ const Chat = () => {
                         />
                       ) : (
                         <span className="text-lg font-semibold text-green-500">
-                          {activeContact.name ? activeContact.name.charAt(0).toUpperCase() : '?'}
+                          {activeContact.name && activeContact.name.includes(' ') 
+                            ? `${activeContact.name.split(' ')[0].charAt(0).toUpperCase()}${activeContact.name.split(' ')[1].charAt(0).toUpperCase()}`
+                            : activeContact.name ? activeContact.name.charAt(0).toUpperCase() : '?'}
                         </span>
                       )}
                     </div>

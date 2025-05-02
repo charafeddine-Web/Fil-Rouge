@@ -9,7 +9,6 @@ const ChatButton = ({ userId, className }) => {
 
   const handleStartChat = () => {
     if (!isAuthenticated) {
-      // Redirect to login if not authenticated
       navigate('/login', { state: { redirectTo: `/chat/${userId}` } });
       return;
     }

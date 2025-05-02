@@ -4,18 +4,15 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 
-// This component has icon SVG inline, but if real avatar images are added later,
-// they should use '/assets/placeholder-avatar.png' as fallback instead of placeholder.com
-
-const MessageDriverButton = ({ driverId, driverName, className }) => {
+function ContactDriverButton({ driverId, driverName, className }) {
   const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const startChatWithDriver = async () => {
-    // Vérifier si l'utilisateur est authentifié
+    // Check if user is authenticated
     if (!isAuthenticated) {
-      toast.error('Vous devez être connecté pour contacter le conducteur');
+      toast.error('You must be logged in to contact the driver');
       navigate('/login');
       return;
     }
@@ -25,10 +22,10 @@ const MessageDriverButton = ({ driverId, driverName, className }) => {
     try {
       setLoading(true);
       
-      // Ajouter le conducteur comme contact
+      // Add driver as a contact
       await api.post('/messages/contact', { user_id: driverId });
       
-      // Naviguer vers la page de chat
+      // Navigate to chat page
       navigate(`/chat/${driverId}`);
     } catch (error) {
       console.error('Error with adding contact, proceeding anyway:', error);
@@ -43,16 +40,21 @@ const MessageDriverButton = ({ driverId, driverName, className }) => {
     <button
       onClick={startChatWithDriver}
       disabled={loading}
-      className={`flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${className || ''}`}
+      className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 
+        bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg 
+        hover:from-green-600 hover:to-green-700 hover:shadow-md 
+        transition-all duration-300 transform hover:-translate-y-0.5 focus:outline-none 
+        focus:ring-2 focus:ring-green-500 focus:ring-opacity-50
+        ${loading ? 'opacity-70 cursor-not-allowed' : ''} ${className || ''}`}
     >
       {loading ? (
-        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
       ) : (
         <svg
-          className="w-4 h-4"
+          className="w-5 h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -66,9 +68,9 @@ const MessageDriverButton = ({ driverId, driverName, className }) => {
           />
         </svg>
       )}
-      <span>Contacter le conducteur</span>
+      <span className="font-medium">Contact Driver</span>
     </button>
   );
-};
+}
 
-export default MessageDriverButton; 
+export default ContactDriverButton; 

@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import ChatNotifications from "./ChatNotifications";
+// import ChatNotifications from "./ChatNotifications";
 
 const Navbar = ({ mobile = false }) => {
   const location = useLocation();
@@ -36,7 +36,6 @@ const Navbar = ({ mobile = false }) => {
     { name: "Messaging", path: "/chat" },
   ];
 
-  // Links for drivers
   const driverLinks = [
     { name: "Dashboard", path: "/dashboard" },
     { name: "My Rides", path: "/my-rides" },

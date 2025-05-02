@@ -9,7 +9,7 @@ import Button from "../../components/Button";
 import { getReservationsByUserId, cancelReservation, submitDriverReview } from "../../services/reservations";
 import { AuthContext } from "../../context/AuthContext";
 import { useContext } from "react";
-import MessageDriverButton from '../../components/MessageDriverButton';
+import ContactDriverButton from '../../components/ContactDriverButton';
 
 const MyReservations = () => {
   const [loading, setLoading] = useState(true);
@@ -542,11 +542,18 @@ const MyReservations = () => {
                       {trajet.conducteur ? (
                         <div className="flex items-center mb-4">
                           <div className="relative">
-                            <img
-                              src={trajet.conducteur.image || "/assets/placeholder-avatar.png"}
-                              alt={trajet.conducteur.user.nom || "Driver"}
-                              className="w-12 h-12 rounded-full object-cover mr-3"
-                            />
+                            {trajet.conducteur.image ? (
+                              <img
+                                src={trajet.conducteur.image}
+                                alt={trajet.conducteur.user.nom || "Driver"}
+                                className="w-12 h-12 rounded-full object-cover mr-3"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-green-500 flex items-center justify-center text-white font-bold mr-3 text-sm">
+                                {trajet.conducteur.user.nom && trajet.conducteur.user.nom.charAt(0).toUpperCase()}
+                                {trajet.conducteur.user.prenom && trajet.conducteur.user.prenom.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             {trajet.conducteur.user.email_verified && (
                               <span className="absolute bottom-0 right-3 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -602,7 +609,7 @@ const MyReservations = () => {
                         
                         {(reservation.status === "confirmee" || reservation.status === "en_attente") && (
                           <div className="w-full">
-                            <MessageDriverButton 
+                            <ContactDriverButton 
                               driverId={trajet.conducteur?.user?.id} 
                               driverName={`${trajet.conducteur?.user?.prenom || 'Driver'}`}
                             />

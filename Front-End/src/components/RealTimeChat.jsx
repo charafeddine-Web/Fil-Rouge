@@ -15,14 +15,12 @@ const RealTimeChat = ({ contact, user }) => {
   const chatContainerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Scroll to bottom whenever messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Fetch messages when contact changes
   useEffect(() => {
     if (!contact || !contact.id) return;
 
@@ -64,14 +62,11 @@ const RealTimeChat = ({ contact, user }) => {
         // Create a private channel for this chat
         const channel = echo.private(`chat.${user.id}.${contact.id}`);
         
-        // Listen for new messages
         channel.listen('.message.sent', (data) => {
           if ((data.from_id === contact.id && data.to_id === user.id) || 
               (data.from_id === user.id && data.to_id === contact.id)) {
-            // Add new message to state
             setMessages(prev => [...prev, data]);
             
-            // Mark as seen if it's from the contact
             if (data.from_id === contact.id) {
               api.post('/rtchat/seen', { from_id: contact.id })
                 .catch(err => console.error('Error marking messages as seen:', err));
@@ -79,7 +74,6 @@ const RealTimeChat = ({ contact, user }) => {
           }
         });
 
-        // Cleanup
         return () => {
           channel.stopListening('.message.sent');
         };
@@ -89,7 +83,6 @@ const RealTimeChat = ({ contact, user }) => {
     }
   }, [contact, user]);
 
-  // Send message handler
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
@@ -98,7 +91,6 @@ const RealTimeChat = ({ contact, user }) => {
     try {
       setSending(true);
       
-      // Create temporary message for immediate display
       const tempMessage = {
         id: `temp-${Date.now()}`,
         from_id: user?.id,
@@ -109,22 +101,18 @@ const RealTimeChat = ({ contact, user }) => {
         temporary: true
       };
       
-      // Show message in UI immediately
       setMessages(prev => [...prev, tempMessage]);
       
-      // Send the actual message
       const response = await api.post('/rtchat/send', {
         to_id: contact.id,
         message: messageText.trim()
       });
       
-      // Clear input
       setMessageText('');
       
       if (response.data && response.data.status) {
         const actualMessage = { ...response.data.message, temporary: false };
         
-        // Replace the temporary message with the real one
         setMessages(prev => 
           prev.map(msg => 
             msg.id === tempMessage.id ? actualMessage : msg
@@ -137,12 +125,10 @@ const RealTimeChat = ({ contact, user }) => {
       console.error('Error sending message:', err);
       setSending(false);
       
-      // Remove the temporary message if sending failed
       setMessages(prev => prev.filter(msg => !msg.temporary));
     }
   };
 
-  // Format time
   const formatMessageTime = (timestamp) => {
     try {
       const date = new Date(timestamp);
@@ -152,7 +138,6 @@ const RealTimeChat = ({ contact, user }) => {
     }
   };
 
-  // Render loading state
   if (loading) {
     return (
       <div className="flex-1 p-4 flex flex-col bg-white rounded-lg">
@@ -171,7 +156,6 @@ const RealTimeChat = ({ contact, user }) => {
     );
   }
 
-  // Render error state
   if (error) {
     return (
       <div className="flex-1 p-4 flex items-center justify-center bg-white rounded-lg">
@@ -188,7 +172,6 @@ const RealTimeChat = ({ contact, user }) => {
     );
   }
 
-  // Render empty state
   if (!contact) {
     return (
       <div className="flex-1 p-8 flex items-center justify-center bg-white rounded-lg">

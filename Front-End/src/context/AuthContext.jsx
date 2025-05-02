@@ -35,7 +35,6 @@ export const AuthContext = createContext();
     setToken(newToken);
     if (newToken) {
       localStorage.setItem('token', newToken);
-      // Initialize Echo when token is set
       initEcho(newToken);
     } else {
       localStorage.removeItem('token');

@@ -298,11 +298,17 @@ const Profile = () => {
             <div className="bg-gradient-to-r from-green-600 to-green-700 px-8 py-6">
               <div className="flex items-center">
                 <div className="relative">
-                  <img 
-                    src={profile.photoDeProfil || "/api/placeholder/150/150"} 
-                    alt="Profile" 
-                    className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg"
-                  />
+                  {profile.photoDeProfil ? (
+                    <img 
+                      src={profile.photoDeProfil} 
+                      alt="Profile" 
+                      className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 rounded-full border-4 border-white bg-gradient-to-r from-green-400 to-green-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                      {profile.prenom.charAt(0).toUpperCase()}{profile.nom.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   {isEditing && (
                     <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-md hover:bg-gray-100 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">

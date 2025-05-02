@@ -42,14 +42,13 @@ const ChatTripInfo = ({ contactId }) => {
   }
 
   if (error) {
-    return null; // Don't show anything if there's an error
+    return null; 
   }
 
   if (!tripInfo) {
-    return null; // Don't show if no trip info available
+    return null; 
   }
 
-  // Format the date
   const formattedDate = tripInfo.date_depart ? 
     format(new Date(tripInfo.date_depart), 'dd MMM yyyy HH:mm') : 
     'Date not available';

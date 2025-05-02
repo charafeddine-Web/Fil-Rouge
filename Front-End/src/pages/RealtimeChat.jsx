@@ -7,10 +7,8 @@ import Footer from '../components/Footer';
 import Loader from '../components/Loader';
 import { useContext } from 'react';
 
-// import useAuth from '../hooks/useAuth';
 import {AuthContext} from '../context/AuthContext';
 
-// Initialize Laravel Echo
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
@@ -31,18 +29,15 @@ const RealtimeChat = () => {
   
   const messagesEndRef = useRef(null);
   
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
   
-  // Initialize Echo when user is authenticated
   useEffect(() => {
     if (!user || !isAuthenticated) return;
     
-    // Create Echo instance for real-time communication
     window.Pusher = Pusher;
     
     const echoInstance = new Echo({
@@ -62,7 +57,6 @@ const RealtimeChat = () => {
     
     setEcho(echoInstance);
     
-    // Cleanup on unmount
     return () => {
       if (echoInstance) {
         echoInstance.disconnect();
@@ -70,7 +64,6 @@ const RealtimeChat = () => {
     };
   }, [user, isAuthenticated]);
   
-  // Determine if we should show contacts sidebar
   useEffect(() => {
     if (userId) {
       const isMobile = window.innerWidth < 768;
@@ -89,7 +82,6 @@ const RealtimeChat = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [userId, activeContact]);
   
-  // Fetch contacts
   useEffect(() => {
     if (!isAuthenticated) return;
     
@@ -103,7 +95,6 @@ const RealtimeChat = () => {
         if (response.data && response.data.status) {
           const contactsList = response.data.contacts;
           
-          // Deduplicate contacts with a Map
           const uniqueMap = new Map();
           contactsList.forEach(contact => {
             if (!uniqueMap.has(contact.id)) {
@@ -118,7 +109,6 @@ const RealtimeChat = () => {
           
           setContacts(sortedContacts);
           
-          // If a userId is provided, set that contact as active
           if (userId) {
             const contact = sortedContacts.find(c => c.id.toString() === userId);
             if (contact) {
@@ -250,14 +240,12 @@ const RealtimeChat = () => {
               
               // Add message to the list
               setMessages(prev => {
-                // Check if message already exists
                 const messageExists = prev.some(msg => 
                   msg.id === data.id || 
                   (msg.temporary && msg.body === data.body && msg.from_id === data.from_id)
                 );
                 
                 if (messageExists) {
-                  // Replace temporary message with real one
                   return prev.map(msg => {
                     if (msg.temporary && msg.body === data.body && msg.from_id === data.from_id) {
                       return { ...data, temporary: false };
@@ -265,18 +253,15 @@ const RealtimeChat = () => {
                     return msg;
                   });
                 } else {
-                  // Add new message
                   return [...prev, data];
                 }
               });
               
-              // Mark message as seen
               if (data.from_id === activeContact.id) {
                 api.post('/api/rtchat/seen', { from_id: activeContact.id })
                   .catch(error => console.error('Error marking message as seen:', error));
               }
               
-              // Scroll to bottom
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             });
         }
@@ -291,7 +276,6 @@ const RealtimeChat = () => {
     
     fetchMessages();
     
-    // Mark messages as seen immediately when changing contacts
     if (activeContact) {
       api.post('/api/rtchat/seen', { from_id: activeContact.id })
         .catch(error => console.error('Error marking messages as seen:', error));
@@ -299,7 +283,6 @@ const RealtimeChat = () => {
     
   }, [activeContact, echo, user]);
   
-  // Load recent contacts from localStorage on init
   useEffect(() => {
     if (isAuthenticated && contacts.length === 0) {
       try {
@@ -316,7 +299,6 @@ const RealtimeChat = () => {
     }
   }, [isAuthenticated, contacts.length]);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -330,7 +312,6 @@ const RealtimeChat = () => {
     try {
       setSending(true);
       
-      // Create temporary message for immediate display
       const tempMessage = {
         id: `temp-${Date.now()}`,
         from_id: user?.id,
@@ -341,16 +322,12 @@ const RealtimeChat = () => {
         temporary: true
       };
       
-      // Show message in UI immediately
       setMessages(prev => [...prev, tempMessage]);
       
-      // Clear input
       setMessageText('');
       
-      // Scroll to bottom
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       
-      // Send the actual message to the server
       const response = await api.post('/api/rtchat/send', {
         to_id: activeContact.id,
         message: tempMessage.body
@@ -359,7 +336,6 @@ const RealtimeChat = () => {
       if (response.data && response.data.status) {
         console.log('Message sent successfully');
         
-        // Replace the temporary message with the real one
         setMessages(prev => 
           prev.map(msg => 
             msg.id === tempMessage.id 
@@ -374,36 +350,30 @@ const RealtimeChat = () => {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
       
-      // Remove the temporary message
       setMessages(prev => prev.filter(msg => msg.id !== `temp-${Date.now()}`));
     } finally {
       setSending(false);
     }
   };
   
-  // Handle contact selection
   const handleContactClick = (contact) => {
     setActiveContact(contact);
     
-    // On mobile, hide the contacts list after selecting
     if (window.innerWidth < 768) {
       setShouldShowContacts(false);
     }
     
-    // Set URL to include active contact
     navigate(`/realtime-chat/${contact.id}`, { replace: true });
   };
   
-  // Toggle contacts visibility on mobile
   const toggleContacts = () => {
     setShouldShowContacts(!shouldShowContacts);
   };
   
   if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
+    return null; 
   }
   
-  // Render error state
   if (error && contacts.length === 0) {
     return (
       <div className="flex flex-col min-h-screen">

@@ -1,7 +1,6 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-// Active le mode débogage pour Pusher afin de diagnostiquer les problèmes
 Pusher.logToConsole = true;
 
 // Set window.Pusher to allow Echo to use it
@@ -36,14 +35,8 @@ export const initEcho = (token) => {
     },
     // Options supplémentaires pour améliorer la fiabilité
     disableStats: true,
-    // Enlever les paramètres wsHost et wsPort qui forcent la connexion à localhost
-    // et utiliser les paramètres Pusher standard qui devraient fonctionner
+   
     
-    // Permettre plus de types de connexions au lieu de les restreindre
-    // enabledTransports: ['ws', 'wss'],
-    // disabledTransports: ['xhr_streaming', 'xhr_polling', 'sockjs'],
-    
-    // Prolonger la durée d'activité avant déconnexion
     activityTimeout: 120000,
   };
 

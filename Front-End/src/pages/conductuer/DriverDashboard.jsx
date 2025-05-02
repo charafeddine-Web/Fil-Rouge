@@ -428,11 +428,17 @@ const DriverDashboard = ({user}) => {
                   Profil Conducteur
                 </h3>
                 <div className="mt-5 flex items-center">
-                  <img
-                    className="h-20 w-20 rounded-full object-cover"
-                    src={driverData.profileImage}
-                    alt={driverData.name}
-                  />
+                  {driverData.profileImage && !driverData.profileImage.includes("placeholder") ? (
+                    <img
+                      className="h-20 w-20 rounded-full object-cover"
+                      src={driverData.profileImage}
+                      alt={driverData.name}
+                    />
+                  ) : (
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-r from-green-400 to-green-500 flex items-center justify-center text-white text-xl font-bold">
+                      {driverData.name.split(' ')[0].charAt(0).toUpperCase()}{driverData.name.split(' ')[1]?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="ml-4">
                     <h4 className="text-xl font-semibold text-gray-900">
                       {driverData.name}
