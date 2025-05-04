@@ -30,6 +30,7 @@ class TrajetController extends Controller
             'prix_par_place' => 'required|numeric|min:0',
             'bagages_autorises' => 'boolean',
             'fumeur_autorise' => 'boolean',
+            'date_arrivee_prevue' => 'required|date'
         ]);
 
         $trajet = $this->trajetService->create($validated);
