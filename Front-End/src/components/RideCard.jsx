@@ -87,7 +87,7 @@ export default function RideCard({ mappedRides, formatDate, formatTime, calculat
                                                             {formatTime(ride.departure.datetime)}
                                                         </p>
                                                         <p className="font-medium text-red-800 text-sm">
-                                                            {formatTime(ride.destination.datetime)}
+                                                            {(ride.destination.datetime)}
                                                         </p>
                                                     </div>
                                                     <div className="flex justify-between">
@@ -115,7 +115,7 @@ export default function RideCard({ mappedRides, formatDate, formatTime, calculat
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-red-800 text-sm">
-                                                        {formatTime(ride.destination.datetime)}
+                                                        {(ride.destination.datetime)}
                                                     </p>
                                                     <h3 className="text-lg font-bold">{ride.destination.city}</h3>
                                                     <p className="text-gray-500 text-xs sm:text-sm truncate max-w-[200px]">{ride.destination.location}</p>

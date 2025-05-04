@@ -228,7 +228,6 @@ const SearchRides = ({user}) => {
     luggageAllowed: ride.bagages_autorises
   }));
 
-  // Generate page title based on search state
   const pageTitle = hasSearched
     ? `${mappedRides.length} rides available from ${departure || "all cities"} to ${destination || "all destinations"}`
     : "All available rides";  
@@ -237,7 +236,6 @@ const SearchRides = ({user}) => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header/>
 
-      {/* Modern Hero Search Section */}
       <div className="bg-green-50 py-8 shadow-md">
         <div className="container mx-auto px-4">
           <form onSubmit={handleSearch} className="bg-white p-6 rounded-xl shadow-lg max-w-5xl mx-auto">

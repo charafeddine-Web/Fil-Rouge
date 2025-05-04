@@ -69,6 +69,7 @@ const MyRide = ({ user }) => {
           return
         }
         const conducteurRes = await getConducteurByUserId(user.id)
+        console.log('haaaaaaaaay ',conducteurRes)
         const conducteurId = conducteurRes.data.id
         setConducteurId(conducteurId)
         const response = await getTrajetsByDriverId(conducteurId)
@@ -115,7 +116,6 @@ const MyRide = ({ user }) => {
         setLoading(false)
       }
     }
-    // Helper function to map backend status to frontend status
     const mapStatus = (backendStatus) => {
       return backendStatus || "planifié"
     }
