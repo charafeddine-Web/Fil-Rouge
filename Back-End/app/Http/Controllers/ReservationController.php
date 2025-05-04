@@ -59,7 +59,6 @@ class ReservationController extends Controller
     {
         \Log::info('Updating reservation', ['reservation_id' => $id]);
 
-        // Get the reservation
         $reservation = $this->reservationService->getReservationById($id);
 
         if (!$reservation) {
@@ -67,11 +66,9 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Reservation not found'], 404);
         }
 
-        // Security check: a conductor can only update reservations for their own rides
         $user = auth()->user();
 
         if ($user->role === 'conducteur') {
-            // Get the conductor ID
             $conducteurId = $user->conducteur->id ?? null;
 
             if (!$conducteurId) {
@@ -79,7 +76,6 @@ class ReservationController extends Controller
                 return response()->json(['message' => 'Conducteur record not found'], 403);
             }
 
-            // Check if the reservation is for a ride owned by this conductor
             $trajetConducteurId = $reservation->trajet->conducteur_id ?? null;
 
             if ($trajetConducteurId !== $conducteurId) {
@@ -121,14 +117,12 @@ class ReservationController extends Controller
 
     public function cancel(int $id): JsonResponse
     {
-        // Get the reservation
         $reservation = $this->reservationService->getReservationById($id);
 
         if (!$reservation) {
             return response()->json(['message' => 'Reservation not found'], 404);
         }
 
-        // Get the trajet
         $trajet = $reservation->trajet;
 
         if (!$trajet) {
@@ -136,15 +130,12 @@ class ReservationController extends Controller
         }
 
         try {
-            // Begin transaction to ensure data consistency
             \DB::beginTransaction();
 
-            // Update reservation status to canceled
             $reservation->status = 'annulee';
             $reservation->updated_at = now();
             $reservation->save();
 
-            // Update the trajet's available seats by adding back the reserved seats
             $trajet->nombre_places += $reservation->places_reservees;
             $trajet->save();
 

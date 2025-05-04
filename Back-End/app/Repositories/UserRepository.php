@@ -27,19 +27,16 @@ class UserRepository implements UserRepositoryInterface
     {
         try {
             \Log::info('UserRepository: Starting profile update', ['user_id' => $user->id]);
-            
-            // Handle profile photo if it exists
+
             if (isset($data['photoDeProfil']) && $data['photoDeProfil'] instanceof \Illuminate\Http\UploadedFile) {
                 $photoPath = $data['photoDeProfil']->store('profile_photos', 'public');
                 $user->photoDeProfil = $photoPath;
             }
 
-            // Handle password if it exists
             if (isset($data['password'])) {
                 $user->password = Hash::make($data['password']);
             }
 
-            // Update basic user information
             $user->update([
                 'nom' => $data['nom'] ?? $user->nom,
                 'prenom' => $data['prenom'] ?? $user->prenom,
@@ -47,11 +44,9 @@ class UserRepository implements UserRepositoryInterface
                 'telephone' => $data['telephone'] ?? $user->telephone,
             ]);
 
-            // Handle driver-specific information
             if ($user->role === 'conducteur') {
                 $conducteur = Conducteur::firstOrCreate(['user_id' => $user->id]);
-                
-                // Update driver information
+
                 $conducteur->update([
                     'num_permis' => $data['num_permis'] ?? $conducteur->num_permis,
                     'adresse' => $data['adresse'] ?? $conducteur->adresse,
@@ -60,12 +55,10 @@ class UserRepository implements UserRepositoryInterface
                     'sexe' => $data['sexe'] ?? $conducteur->sexe,
                 ]);
 
-                // Handle driver's license photo
                 if (isset($data['photo_permis']) && $data['photo_permis'] instanceof \Illuminate\Http\UploadedFile) {
                     $conducteur->photo_permis = $data['photo_permis']->store('permis', 'public');
                 }
 
-                // Handle ID photo
                 if (isset($data['photo_identite']) && $data['photo_identite'] instanceof \Illuminate\Http\UploadedFile) {
                     $conducteur->photo_identite = $data['photo_identite']->store('identites', 'public');
                 }
@@ -74,7 +67,7 @@ class UserRepository implements UserRepositoryInterface
             }
 
             \Log::info('UserRepository: Profile update completed', ['user_id' => $user->id]);
-            
+
             return $user->fresh();
         } catch (\Exception $e) {
             \Log::error('UserRepository: Error updating profile', [

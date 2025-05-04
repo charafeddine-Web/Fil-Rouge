@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email de Vérification</title>
+    <title>Email Verification</title>
     <style>
         :root {
             --primary-color: rgba(112, 244, 109, 1);
@@ -110,11 +110,11 @@
 <body>
 <div class="email-container">
     <div class="email-header">
-        <h2>Vérification de votre adresse email</h2>
+        <h2>Email Address Verification</h2>
     </div>
     <div class="email-body">
-        <p>Bonjour,</p>
-        <p>Merci de votre inscription. Pour continuer, veuillez utiliser le code de vérification ci-dessous :</p>
+        <p>Hello,</p>
+        <p>Thank you for registering. To continue, please use the verification code below:</p>
 
         <div class="verification-code-container">
             <div class="verification-code">
@@ -124,7 +124,7 @@
 
     </div>
     <div class="footer">
-        <p>© 2025 SwiftCar . Tous droits réservés.</p>
+        <p>© 2025 SwiftCar. All rights reserved.</p>
     </div>
 </div>
 </body>

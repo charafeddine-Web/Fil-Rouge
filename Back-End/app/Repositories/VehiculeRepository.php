@@ -7,7 +7,7 @@ use App\Interfaces\VehiculeRepositoryInterface;
 
 class VehiculeRepository implements VehiculeRepositoryInterface
 {
-    public function create(array $data)
+        public function create(array $data)
     {
         return Vehicule::create($data);
     }

@@ -11373,9 +11373,9 @@
 							"parentStyle": false,
 							"left": 1552,
 							"top": 40,
-							"width": 284,
-							"height": 38,
-							"text": "Plateforme de covoiturage\n\n"
+							"width": 528,
+							"height": 56,
+							"text": "Système de gestion de plateforme d'autopartage"
 						},
 						{
 							"_type": "UMLExtendView",

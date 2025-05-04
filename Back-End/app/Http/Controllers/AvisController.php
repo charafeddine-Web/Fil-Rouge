@@ -34,7 +34,6 @@ class AvisController extends Controller
             'commentaire' => 'nullable|string',
         ]);
 
-        // Check if this reservation already has a review
         $existingAvis = \App\Models\Avis::where('reservation_id', $validated['reservation_id'])->first();
         if ($existingAvis) {
             return response()->json([
@@ -43,7 +42,6 @@ class AvisController extends Controller
             ], 422);
         }
 
-        // Get the reservation to check its status
         $reservation = Reservation::find($validated['reservation_id']);
         if ($reservation->status !== 'confirmee') {
             return response()->json([
@@ -52,7 +50,7 @@ class AvisController extends Controller
         }
 
         $avis = $this->avisService->createAvis($validated);
-        
+
         return response()->json([
             'message' => 'Avis créé avec succès',
             'avis' => $avis,
@@ -83,11 +81,11 @@ class AvisController extends Controller
     public function getReviewByReservation($reservationId)
     {
         $avis = \App\Models\Avis::where('reservation_id', $reservationId)->first();
-        
+
         if (!$avis) {
             return response()->json(null, 404);
         }
-        
+
         return response()->json($avis);
     }
 }

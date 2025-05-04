@@ -73,7 +73,6 @@ class TrajetService
         if (!empty($filters['max_prix'])) {
             $query->where('prix_par_place', '<=', $filters['max_prix']);
         }
-
         return $query->get();
     }
 

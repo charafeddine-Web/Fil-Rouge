@@ -23,7 +23,6 @@ class NewMessage implements ShouldBroadcast
      */
     public function __construct($message)
     {
-        // Convert arrays to objects for consistent access
         if (is_array($message)) {
             $this->message = (object) $message;
         } else {
@@ -38,10 +37,9 @@ class NewMessage implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        // Safely get sender and receiver IDs regardless of naming convention
         $senderId = $this->getSenderId();
         $receiverId = $this->getReceiverId();
-        
+
         return [
             new PrivateChannel('chat.' . $senderId . '.' . $receiverId),
             new PrivateChannel('chat.' . $receiverId . '.' . $senderId),
@@ -64,19 +62,17 @@ class NewMessage implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        // For model objects, try to load relationships
         if ($this->message instanceof Message) {
             return [
                 'message' => $this->message->load(['sender', 'receiver'])
             ];
         }
-        
-        // For stdClass objects or arrays, return as is
+
         return [
             'message' => $this->message
         ];
     }
-    
+
     /**
      * Safely get the sender ID regardless of format
      */
@@ -85,14 +81,14 @@ class NewMessage implements ShouldBroadcast
         if (is_object($this->message)) {
             return $this->message->sender_id ?? $this->message->from_id ?? null;
         }
-        
+
         if (is_array($this->message)) {
             return $this->message['sender_id'] ?? $this->message['from_id'] ?? null;
         }
-        
+
         return null;
     }
-    
+
     /**
      * Safely get the receiver ID regardless of format
      */
@@ -101,11 +97,11 @@ class NewMessage implements ShouldBroadcast
         if (is_object($this->message)) {
             return $this->message->receiver_id ?? $this->message->to_id ?? null;
         }
-        
+
         if (is_array($this->message)) {
             return $this->message['receiver_id'] ?? $this->message['to_id'] ?? null;
         }
-        
+
         return null;
     }
-} 
+}

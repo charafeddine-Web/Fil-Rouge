@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Conducteur extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'conducteurs';
 
     protected $fillable = [
@@ -41,7 +41,7 @@ class Conducteur extends Model
             ->withPivot('contenu', 'lu', 'created_at')
             ->withTimestamps();
     }
-    
+
     /**
      * Get messages received by this driver
      */
@@ -57,7 +57,6 @@ class Conducteur extends Model
     {
         return $this->hasMany(Message::class, 'envoyeur_id')->where('type_envoyeur', 'conducteur');
     }
-
     /**
      * Get the associated vehicle
      */
@@ -65,7 +64,6 @@ class Conducteur extends Model
     {
         return $this->hasOne(Vehicule::class, 'conducteur_id');
     }
-
     /**
      * Get all trips created by this driver
      */

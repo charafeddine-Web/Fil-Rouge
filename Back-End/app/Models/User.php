@@ -11,9 +11,9 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
-    
+
     protected $primaryKey = 'id';
-    
+
     protected $fillable = [
         'nom',
         'prenom',
@@ -43,10 +43,10 @@ class User extends Authenticatable
     }
 
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     * relation entre passager et condicteur avec table pivot messages
-     */
+//    /**
+//     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+//     * relation entre passager et condicteur avec table pivot messages
+//     */
     public function conducteursMessages()
     {
         return $this->belongsToMany(Conducteur::class, 'messages', 'passager_id', 'conducteur_id')
@@ -78,17 +78,17 @@ class User extends Authenticatable
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      * relation avec trajet avec table pivot reservations
      */
-    public function trajets()
-    {
-        return $this->belongsToMany(Trajet::class, 'reservations', 'passager_id', 'trajet_id')
-            ->withPivot('status', 'places_reservees', 'created_at')
-            ->withTimestamps();
-    }
+//    public function trajets()
+//    {
+//        return $this->belongsToMany(Trajet::class, 'reservations', 'passager_id', 'trajet_id')
+//            ->withPivot('status', 'places_reservees', 'created_at')
+//            ->withTimestamps();
+//    }
 
-    public function reservations()
-    {
-        return $this->hasMany(Reservation::class);
-    }
+//    public function reservations()
+//    {
+//        return $this->hasMany(Reservation::class);
+//    }
 
 
 

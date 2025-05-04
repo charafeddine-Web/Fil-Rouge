@@ -29,22 +29,18 @@ class ReservationService
 
     public function createReservation(array $data): Reservation
     {
-        // Start a database transaction to ensure data consistency
         return DB::transaction(function () use ($data) {
             $trajet = Trajet::findOrFail($data['trajet_id']);
 
             $remainingSeats = $trajet->nombre_places - $data['places_reservees'];
 
-            // Check if enough seats are available
             if ($remainingSeats < 0) {
                 throw new \Exception("Pas assez de places disponibles");
             }
 
-            // Update trajet's available seats
             $trajet->nombre_places = $remainingSeats;
             $trajet->save();
 
-            // Create the reservation
             return $this->reservationRepository->create($data);
         });
     }

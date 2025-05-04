@@ -122,19 +122,19 @@ class MessageController extends Controller
                 WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)
                 ORDER BY created_at ASC
             ", [$user->id, $userId, $userId, $user->id]);
-            
+
             // Format messages with user data
             $messages = collect($messagesRaw)->map(function($message) use ($user) {
                 $isSender = $message->from_id == $user->id;
                 $otherUserId = $isSender ? $message->to_id : $message->from_id;
                 $otherUser = User::select('id', 'nom', 'prenom', 'email', 'photoDeProfil', 'role')
                     ->find($otherUserId);
-                
+
                 return [
                     'id' => $message->id,
                     'from_id' => $message->from_id,
                     'to_id' => $message->to_id,
-                    'sender_id' => $message->from_id,  // Add both naming conventions
+                    'sender_id' => $message->from_id,
                     'receiver_id' => $message->to_id,
                     'content' => $message->content,
                     'seen' => (bool)$message->seen,
@@ -175,8 +175,8 @@ class MessageController extends Controller
 
             // Mark messages as read
             DB::update("
-                UPDATE messages 
-                SET seen = true, is_read = true 
+                UPDATE messages
+                SET seen = true, is_read = true
                 WHERE from_id = ? AND to_id = ? AND seen = false
             ", [$userId, $user->id]);
 
@@ -184,11 +184,11 @@ class MessageController extends Controller
                 'status' => true,
                 'messages' => $messages
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error getting messages: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+
             return response()->json([
                 'status' => false,
                 'message' => 'Error getting messages',
@@ -217,31 +217,29 @@ class MessageController extends Controller
             // Use our already confirmed working UUID approach
             $stmt = DB::select("SELECT uuid_generate_v4() AS uuid");
             $uuid = $stmt[0]->uuid;
-            
+
             if (empty($uuid)) {
                 throw new \Exception("Failed to generate UUID");
             }
-            
+
             // Use parameterized query for safety
             $success = DB::insert("
-                INSERT INTO messages (id, from_id, to_id, body, seen, created_at, updated_at) 
+                INSERT INTO messages (id, from_id, to_id, body, seen, created_at, updated_at)
                 VALUES (?, ?, ?, ?, false, NOW(), NOW())
             ", [$uuid, $user->id, $request->to_id, $request->content]);
-            
+
             if (!$success) {
                 throw new \Exception("Failed to insert message");
             }
-            
-            // Get user information
+
             $senderUser = User::find($user->id);
             $receiverUser = User::find($request->to_id);
-            
-            // Format response object
+
             $formattedMessage = [
                 'id' => $uuid,
-                'from_id' => $user->id, 
+                'from_id' => $user->id,
                 'to_id' => $request->to_id,
-                'sender_id' => $user->id,      // Include both naming conventions
+                'sender_id' => $user->id,
                 'receiver_id' => $request->to_id,
                 'content' => $request->content,
                 'seen' => false,
@@ -264,20 +262,20 @@ class MessageController extends Controller
                     'role' => $receiverUser->role
                 ]
             ];
-            
-            // Broadcast message if needed
+
+            // Broadcast message
             $messageForBroadcast = (object) $formattedMessage;
             broadcast(new NewMessage($messageForBroadcast))->toOthers();
-            
+
             return response()->json([
                 'status' => true,
                 'message' => $formattedMessage
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error sending message: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+
             return response()->json([
                 'status' => false,
                 'message' => 'Error sending message',
@@ -323,10 +321,9 @@ class MessageController extends Controller
         }
 
         try {
-            // Use direct SQL update to avoid issues
             $updated = DB::update("
-                UPDATE messages 
-                SET seen = true, is_read = true 
+                UPDATE messages
+                SET seen = true, is_read = true
                 WHERE from_id = ? AND to_id = ? AND seen = false
             ", [$request->from_id, $user->id]);
 
@@ -337,7 +334,7 @@ class MessageController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error marking messages as read: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+
             return response()->json([
                 'status' => false,
                 'message' => 'Error marking messages as read',
@@ -378,29 +375,25 @@ class MessageController extends Controller
                 ->exists();
 
             if (!$existingMessages) {
-                // Generate UUID for the message using the same approach
                 $stmt = DB::select("SELECT uuid_generate_v4() AS uuid");
                 $uuid = $stmt[0]->uuid;
-                
+
                 if (empty($uuid)) {
                     throw new \Exception("Failed to generate UUID");
                 }
-                
-                // Create a system message to establish the contact
-                DB::insert("
-                    INSERT INTO messages (id, from_id, to_id, body, seen, created_at, updated_at) 
-                    VALUES (?, ?, ?, ?, false, NOW(), NOW())
-                ", [$uuid, $user->id, $request->user_id, 'Bonjour, je souhaiterais discuter avec vous.']);
 
-                // Get the inserted message
+                DB::insert("
+                    INSERT INTO messages (id, from_id, to_id, body, seen, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, false, NOW(), NOW())
+                ", [$uuid, $user->id, $request->user_id, 'Hello, I would like to chat with you.']);
+
                 $message = DB::table('messages')->where('id', $uuid)->first();
 
-                // Format message for broadcast
                 $formattedMessage = [
                     'id' => $message->id,
                     'from_id' => $message->from_id,
                     'to_id' => $message->to_id,
-                    'sender_id' => $message->from_id,  // Include both naming conventions
+                    'sender_id' => $message->from_id,
                     'receiver_id' => $message->to_id,
                     'content' => $message->body,
                     'seen' => (bool)$message->seen,
@@ -416,7 +409,6 @@ class MessageController extends Controller
                     ]
                 ];
 
-                // Broadcast the message
                 $messageForBroadcast = (object) $formattedMessage;
                 broadcast(new NewMessage($messageForBroadcast))->toOthers();
             }

@@ -34,12 +34,11 @@ class NewChatMessage implements ShouldBroadcast
         // Create a private channel between the two users
         $fromId = $this->message['from_id'];
         $toId = $this->message['to_id'];
-        
-        // Ensure consistent channel naming regardless of who is sending to whom
+
         $users = [$fromId, $toId];
         sort($users);
         $channelName = 'chat.' . implode('.', $users);
-        
+
         return [
             new PrivateChannel($channelName),
         ];
@@ -62,4 +61,4 @@ class NewChatMessage implements ShouldBroadcast
     {
         return $this->message;
     }
-} 
+}

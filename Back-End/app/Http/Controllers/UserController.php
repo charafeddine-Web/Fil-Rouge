@@ -90,7 +90,6 @@ class UserController extends Controller
         try {
             $user = User::with(['conducteur', 'passager'])->findOrFail($id);
 
-            // Only return necessary user information
             return response()->json([
                 'id' => $user->id,
                 'nom' => $user->nom,
