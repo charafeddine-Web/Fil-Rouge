@@ -1,7 +1,5 @@
 # SwiftCar
 
-This document outlines how to set up the real-time chat functionality between drivers and passengers using Pusher and Laravel Echo.
-
 ## Overview
 
 The chat system allows:
